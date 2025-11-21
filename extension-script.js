@@ -1,6 +1,5 @@
 (function () {
-  const MAX_SCORE = 100; // เพิ่มช่วงเวลาสแกนเป็น 4 รอบ เน้นรอบสุดท้ายนานขึ้น
-  const AUTO_SCAN_INTERVALS = [500, 1500, 3000, 5000]; // --- 1. CSS Style (แก้ไขปัญหา UI เพี้ยนและหลอดไม่เต็ม) ---
+  const MAX_SCORE = 100; // --- 1. CSS Style (แก้ไขปัญหา UI เพี้ยนและหลอดไม่เต็ม) ---
 
   const CSS_STYLE = `
         #popko-root {
@@ -8,7 +7,6 @@
             z-index: 9999;
             top: 50px;
             right: 10px;
-            /* กำหนดให้ลากง่ายขึ้นบนมือถือ */
             touch-action: none;
         }
         #love-toggle-btn {
@@ -21,12 +19,13 @@
             justify-content: center;
             font-size: 18px;
             cursor: grab;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
         #love-overlay {
             position: absolute;
             right: 0;
             top: 40px;
-            width: 200px; /* กำหนดความกว้างของ Box */
+            width: 200px; 
             background: rgba(30, 30, 30, 0.95);
             border: 1px solid #ff7799;
             border-radius: 8px;
@@ -37,14 +36,15 @@
             position: relative;
             height: 20px;
             background: #333;
-            border-radius: 4px;
+            border-radius: 10px; /* ทำให้โค้งมากขึ้น */
             overflow: hidden;
             margin-top: 5px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); /* เพิ่มมิติ */
         }
         #love-progress {
             height: 100%;
             background: linear-gradient(90deg, #ff99aa, #ff4466);
-            transition: width 0.5s ease-out; /* ทำให้แถบเลื่อนดู Smooth */
+            transition: width 0.5s ease-out; 
         }
         #love-score-text {
             position: absolute;
@@ -57,10 +57,17 @@
             font-weight: bold;
             text-shadow: 1px 1px 2px #000;
         }
+        #love-level-text {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffcccc;
+            margin-bottom: 5px;
+        }
         .hidden {
             display: none !important;
         }
-    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือนเดิม) --- // ฟังก์ชันดึงชื่อตัวละครปัจจุบัน
+    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือนเดิม) ---
 
   function getCurrentCharKey() {
     if (typeof window.this_chid !== 'undefined' && window.characters && window.characters[window.this_chid]) {
@@ -68,22 +75,19 @@
       return 'popko_love_' + charName.replace(/[^a-zA-Z0-9]/g, '_');
     }
     return 'popko_love_Unknown';
-  } // ดึงคะแนน
-
+  }
   function getScore() {
     const key = getCurrentCharKey();
     const val = localStorage.getItem(key);
     return val ? parseInt(val, 10) : 0;
-  } // บันทึกคะแนน
-
+  }
   function setScore(val) {
     if (val > MAX_SCORE) val = MAX_SCORE;
     if (val < 0) val = 0;
-
     const key = getCurrentCharKey();
     localStorage.setItem(key, val);
     return val;
-  } // --- 3. HTML Templates (ลบปุ่มทดสอบ +10/-10) ---
+  } // --- 3. HTML Templates (ปรับให้กระชับขึ้น) ---
 
   const HTML_TEMPLATE = `
         <div id="popko-root">
@@ -99,7 +103,7 @@
                         Auto-Scan: <span id="auto-status" style="color:green;">Active</span>
                     </div>
                     <div style="margin-top:5px;">
-                        <button id="btn-force-scan" class="menu_button" style="width:100%;">
+                        <button id="btn-force-scan" class="menu_button" style="width:100%; padding: 5px;">
                             🔍 Manual Check
                         </button>
                     </div>
@@ -111,7 +115,7 @@
   const SETTINGS_PANEL_HTML = `
         <div id="popko-settings-panel" class="extension_block">
             <div class="extension_name">
-                Popko Love Status
+                Popko Love Status (V4.0)
                 <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
             </div>
             <div class="extension_content" style="display:none; padding: 10px;">
@@ -140,7 +144,7 @@
       else if (percent >= 20) label.innerText = `😊 เพื่อน`;
       else label.innerText = `😐 คนรู้จัก`;
     }
-  } // --- 5. Scanning Logic (มีการเพิ่ม console.log เพื่อ Debug) ---
+  } // --- 5. Scanning Logic (เหมือนเดิม) ---
 
   function tryParseText(text) {
     if (!text) return false;
@@ -153,7 +157,6 @@
 
       if (!isNaN(points)) {
         console.log(`[Popko] ✅ Auto-detected: ${points}. Updating score.`);
-
         let current = getScore();
         setScore(current + points);
         updateDisplay();
@@ -165,33 +168,23 @@
       }
     }
     return false;
-  }
+  } // ฟังก์ชันสแกนหาข้อความ (ใช้ DOM เป็นหลัก)
 
   function performScan(isManual = false) {
-    let found = false; // 1. อ่านจาก Variable (เร็วที่สุด อาจจะเจอก่อนขึ้นจอ)
+    let found = false; // 1. อ่านจาก DOM (หน้าจอ)
 
-    if (window.chat && window.chat.length > 0) {
+    const domMsgs = document.querySelectorAll('.mes_text');
+    if (domMsgs.length > 0) {
+      // อ่านข้อความล่าสุด
+      const lastMsg = domMsgs[domMsgs.length - 1].innerText;
+      found = tryParseText(lastMsg);
+    } // 2. ถ้าไม่เจอ ลองอ่านจาก Variable (เป็น Fallback)
+
+    if (!found && window.chat && window.chat.length > 0) {
       for (let i = window.chat.length - 1; i >= 0; i--) {
         if (!window.chat[i].is_user) {
-          console.log(`[Popko] Scanning window.chat[${i}]`);
           found = tryParseText(window.chat[i].mes);
           if (found) break;
-        }
-      }
-    } // 2. ถ้าไม่เจอ ลองอ่านจาก DOM (เผื่อ SillyTavern อัปเดต DOM ก่อนตัวแปร)
-
-    if (!found) {
-      const domMsgs = document.querySelectorAll('.mes_text');
-      if (domMsgs.length > 0) {
-        // อ่านข้อความล่าสุด
-        const lastMsg = domMsgs[domMsgs.length - 1].innerText;
-        console.log(`[Popko] Scanning DOM (Last Message)`);
-        found = tryParseText(lastMsg); // ถ้ายังไม่เจอ ลองอ่านข้อความรองสุดท้าย
-
-        if (!found && domMsgs.length > 1) {
-          const prevMsg = domMsgs[domMsgs.length - 2].innerText;
-          console.log(`[Popko] Scanning DOM (Previous Message)`);
-          found = tryParseText(prevMsg);
         }
       }
     }
@@ -204,15 +197,18 @@
 
   function init() {
     $('#popko-root').remove();
-    $('#popko-settings-panel').remove(); // ********************************** // เพิ่ม CSS เข้าไปใน <head> เพื่อแก้ไข UI
-    $('head').append('<style id="popko-style">' + CSS_STYLE + '</style>'); // **********************************
+    $('#popko-settings-panel').remove(); // เพิ่ม CSS เข้าไปใน <head> เพื่อแก้ไข UI
+    $('head').append('<style id="popko-style">' + CSS_STYLE + '</style>');
+
     $('body').append(HTML_TEMPLATE);
-    if ($('#extensions_settings').length) $('#extensions_settings').append(SETTINGS_PANEL_HTML); // Events
+    if ($('#extensions_settings').length) $('#extensions_settings').append(SETTINGS_PANEL_HTML); // Events & Drag Logic (เหมือนเดิม)
 
     $('#love-toggle-btn').on('click', () => $('#love-overlay').toggleClass('hidden'));
-    $('#btn-force-scan').on('click', () => performScan(true)); // ... ส่วนของ Menu และ Drag Logic เหมือนเดิม
-
-    // (ส่วน Menu และ Drag Logic เหมือนเดิม)
+    $('#btn-force-scan').on('click', () => {
+      performScan(true);
+      // หลัง Manual Check ให้รอ 1 วินาทีแล้วเปลี่ยน Auto Status กลับ
+      $('#auto-status').text('Active').css('color', 'green');
+    });
     $('#menu-toggle-widget').on('click', function () {
       const btn = $('#love-toggle-btn');
       if (btn.is(':visible')) {
@@ -229,8 +225,7 @@
         setScore(0);
         updateDisplay();
       }
-    }); // Drag Logic (Touch & Mouse) - เพื่อให้ใช้บนมือถือได้หากเบราว์เซอร์รองรับ
-
+    }); // Drag Logic (Touch & Mouse) - เหมือนเดิม
     const makeDraggable = element => {
       let isDragging = false,
         startX,
@@ -248,7 +243,7 @@
       };
       const onMove = (x, y) => {
         if (!isDragging) return;
-        element.style.position = 'fixed'; // ต้องใส่ Math.max/min เพื่อป้องกันการลากหลุดจอไป
+        element.style.position = 'fixed';
         element.style.left = `${Math.max(
           0,
           Math.min(window.innerWidth - element.offsetWidth, initialLeft + (x - startX)),
@@ -292,52 +287,52 @@
     if (btn) makeDraggable(btn);
 
     updateDisplay();
-  } // --- 7. Event Listeners (Auto-Scan Enhanced) ---
+  } // --- 7. Event Listeners (ใช้ Mutation Observer แทน EventSource) ---
 
   function startListening() {
-    if (!window.eventSource) {
+    const chatContainer = document.getElementById('chat'); // ID หลักของกล่องแชทใน SillyTavern
+
+    if (!chatContainer) {
+      console.warn('[Popko] Chat container not found. Retrying in 1s...');
       setTimeout(startListening, 1000);
       return;
-    } // 1. เมื่อมีข้อความเข้า (Auto Scan - ตื๊อ 4 รอบ)
+    }
 
-    window.eventSource.on(window.event_types.MESSAGE_RECEIVED, () => {
-      $('#auto-status').text('Scanning...').css('color', 'orange'); // **ใช้ตัวแปรภายนอกเพื่อติดตามว่าสแกนเจอแล้วหรือยัง**
+    let scanTimeout = null; // สร้าง Mutation Observer
+    const observer = new MutationObserver((mutationsList, observer) => {
+      // Clear timeout เก่า เพื่อให้เรียก performScan แค่ครั้งเดียวต่อข้อความ
+      if (scanTimeout) clearTimeout(scanTimeout); // ตั้งสถานะเป็น Scanning
 
-      let foundInScan = false;
+      $('#auto-status').text('Scanning...').css('color', 'orange'); // หน่วงเวลาสั้นๆ (300ms) เพื่อให้แน่ใจว่าข้อความถูกเพิ่มลงใน DOM สมบูรณ์แล้ว
 
-      AUTO_SCAN_INTERVALS.forEach((delay, index) => {
-        setTimeout(() => {
-          // สแกนต่อเมื่อยังไม่เจอเท่านั้น
-          if (!foundInScan) {
-            const isFound = performScan(false);
-            if (isFound) {
-              foundInScan = true; // เจอแล้ว หยุดสแกนต่อ
-            }
-          }
-          // เมื่อถึงรอบสุดท้าย ให้เปลี่ยนสถานะกลับเป็น Active ไม่ว่าจะเจอหรือไม่ก็ตาม
-          if (index === AUTO_SCAN_INTERVALS.length - 1) {
-            $('#auto-status').text('Active').css('color', 'green');
-            if (!foundInScan) {
-              console.log('[Popko] Auto-Scan completed (4 rounds). Tag not found.');
-            }
-          }
-        }, delay);
-      });
-    }); // 2. เมื่อเปลี่ยนตัวละคร (CHAT_CHANGED)
+      scanTimeout = setTimeout(() => {
+        console.log('[Popko] Auto-Scan triggered by MutationObserver.');
+        performScan(false); // ตั้งสถานะกลับเป็น Active
+        $('#auto-status').text('Active').css('color', 'green');
+      }, 300);
+    }); // เริ่มสังเกตการณ์การเปลี่ยนแปลงของ Child Nodes ใน chatContainer
 
-    window.eventSource.on(window.event_types.CHAT_CHANGED, () => {
-      console.log('[Popko] Character changed, reloading score...');
-      setTimeout(() => {
-        updateDisplay();
-      }, 500);
+    observer.observe(chatContainer, {
+      childList: true, // สังเกตการเพิ่ม/ลบ Node ลูก
+      subtree: true, // สังเกตในทุกระดับ
     });
+    console.log('[Popko] MutationObserver is now watching the chat container.'); // 2. เมื่อเปลี่ยนตัวละคร (ใช้ EventSource เดิมสำหรับการโหลดตัวละคร)
+
+    if (window.eventSource) {
+      window.eventSource.on(window.event_types.CHAT_CHANGED, () => {
+        console.log('[Popko] Character changed, reloading score...');
+        setTimeout(() => {
+          updateDisplay();
+        }, 500);
+      });
+    }
   }
 
   $(document).ready(function () {
     setTimeout(() => {
       init();
       startListening();
-      console.log('[Popko] V3.2 Loaded (CSS fixed, Scan enhanced)');
+      console.log('[Popko] V4.0 Loaded (UI Fixed, MutationObserver for Auto-Scan)');
     }, 500);
   });
 })();
