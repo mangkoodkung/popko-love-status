@@ -1,28 +1,28 @@
 (function () {
-  // --- ตั้งค่าตัวแปร ---
   const MAX_SCORE = 100;
 
-  // ฟังก์ชันช่วยดึงค่า (ป้องกันค่าเพี้ยน)
+  // --- 1. Helper Functions ---
   function getScore() {
     const val = localStorage.getItem('popko_love_score');
     return val ? parseInt(val, 10) : 0;
   }
 
   function setScore(val) {
+    // ป้องกันค่าเกินขอบเขต
     if (val > MAX_SCORE) val = MAX_SCORE;
     if (val < 0) val = 0;
     localStorage.setItem('popko_love_score', val);
     return val;
   }
 
-  // --- HTML ที่จะสร้าง (เรียก Class จาก style.css) ---
+  // --- 2. HTML Templates ---
   const HTML_TEMPLATE = `
         <div id="popko-root">
             <div id="love-toggle-btn">💗</div>
 
             <div id="love-overlay" class="hidden">
                 <div class="love-status-box">
-                    <div id="love-level-text">...</div>
+                    <div id="love-level-text">Ready</div>
                     
                     <div class="love-bar-container">
                         <div id="love-progress"></div>
@@ -32,6 +32,12 @@
                     <div class="test-buttons">
                         <button id="btn-test-add">+10</button>
                         <button id="btn-test-sub">-10</button>
+                    </div>
+                    
+                    <div style="margin-top:8px;">
+                        <button id="btn-force-scan" style="width:100%; background:#666; color:white; font-size:11px; padding:5px; border:none; border-radius:5px; cursor:pointer;">
+                            🔍 Force Scan (ตรวจสอบ)
+                        </button>
                     </div>
                 </div>
             </div>
@@ -45,17 +51,13 @@
                 <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
             </div>
             <div class="extension_content" style="display:none; padding: 10px;">
-                <button id="menu-toggle-widget" class="menu_button" style="width:100%; margin-bottom:5px;">
-                    👁️ ซ่อน/แสดง ปุ่มหัวใจ
-                </button>
-                <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc;">
-                    🗑️ รีเซ็ตค่าเป็น 0
-                </button>
+                <button id="menu-toggle-widget" class="menu_button" style="width:100%; margin-bottom:5px;">👁️ ซ่อน/แสดง ปุ่มหัวใจ</button>
+                <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc;">🗑️ รีเซ็ตค่าเป็น 0</button>
             </div>
         </div>
     `;
 
-  // --- ฟังก์ชันอัปเดตหน้าจอ (Render) ---
+  // --- 3. Display Logic ---
   function updateDisplay() {
     const score = getScore();
     const percent = (score / MAX_SCORE) * 100;
@@ -68,7 +70,6 @@
       bar.style.width = `${percent}%`;
       text.innerText = `${Math.round(percent)}%`;
 
-      // เปลี่ยนข้อความตามระดับ
       if (percent >= 100) label.innerText = '💍 คู่ชีวิต (Soulmate)';
       else if (percent >= 80) label.innerText = '💖 คลั่งรัก (Obsessed)';
       else if (percent >= 60) label.innerText = '🌹 คนรัก (Lover)';
@@ -78,21 +79,27 @@
     }
   }
 
-  // --- ฟังก์ชันอ่านค่าจาก AI ---
-  function scanAIResponse(text) {
-    if (!text) return;
+  // --- 4. Scanning Logic (The Detective) ---
 
-    // Regex หา [LOVE: +10] หรือ [AFFINITY: -5]
-    const regex = /\[\s*(?:LOVE|AFFINITY)\s*[:=]\s*([+-]?\s*\d+)\s*\]/i;
+  function tryParseText(text, sourceName) {
+    if (!text) return false;
+
+    // Regex แบบครอบจักรวาล:
+    // - รับทั้ง LOVE และ AFFINITY (ตัวเล็ก/ใหญ่)
+    // - รับ : หรือ =
+    // - รับเว้นวรรคกี่ตัวก็ได้
+    // - รับเครื่องหมาย + หรือ - หรือไม่มีก็ได้
+    // - รับตัวเลข
+    const regex = /\[\s*(?:LOVE|AFFINITY)\s*[:=]\s*([+\-]?\s*\d+)\s*\]/i;
+
     const match = text.match(regex);
 
     if (match) {
-      // แปลงข้อความ "+ 10" เป็นตัวเลข 10
-      const numStr = match[1].replace(/\s/g, '');
+      const numStr = match[1].replace(/\s/g, ''); // ลบเว้นวรรคทิ้งให้หมด
       const points = parseInt(numStr, 10);
 
       if (!isNaN(points)) {
-        console.log(`[Popko] AI Points Found: ${points}`);
+        console.log(`[Popko] ✅ Match Found! Points: ${points} Source: ${sourceName}`);
 
         let current = getScore();
         setScore(current + points);
@@ -101,65 +108,94 @@
         if (typeof toastr !== 'undefined') {
           toastr.success(`Love Updated: ${points > 0 ? '+' : ''}${points}%`);
         }
+        return true; // เจอแล้ว!
       }
+    }
+    return false; // ไม่เจอ
+  }
+
+  // ฟังก์ชันหลักที่ใช้อ่านหน้าจอ
+  function performScan(isManual = false) {
+    let found = false;
+    let debugText = '';
+
+    // วิธีที่ 1: อ่านจาก DOM (หน้าจอ) - แม่นยำสุดเพราะคือสิ่งที่ตาเห็น
+    // หา element ที่ชื่อ class "mes_text" ตัวสุดท้าย
+    const domMsgs = document.querySelectorAll('.mes_text');
+    if (domMsgs.length > 0) {
+      const lastMsg = domMsgs[domMsgs.length - 1];
+      const textContent = lastMsg.innerText; // ใช้ innerText จะได้ข้อความเพียวๆ
+
+      debugText = textContent.substring(0, 100) + '...'; // เก็บไว้ดูตอน debug
+      found = tryParseText(textContent, 'DOM (Screen)');
+    }
+
+    // วิธีที่ 2: ถ้าหน้าจอหาไม่เจอ ลองไปดูในตัวแปรระบบ (Backup)
+    if (!found && window.chat && window.chat.length > 0) {
+      // วนหาข้อความล่าสุดที่ไม่ใช่ของ User
+      for (let i = window.chat.length - 1; i >= 0; i--) {
+        if (!window.chat[i].is_user) {
+          found = tryParseText(window.chat[i].mes, 'Variable (Chat)');
+          if (!debugText) debugText = window.chat[i].mes.substring(0, 50);
+          break;
+        }
+      }
+    }
+
+    // ถ้ากดปุ่ม Scan แล้วยังไม่เจอ ให้ฟ้องผู้ใช้
+    if (isManual && !found) {
+      alert(
+        `❌ สแกนไม่พบ Tag [LOVE: +/-N]\n\nข้อความล่าสุดที่สแกนเจอคือ:\n"${debugText}"\n\n(ถ้ามี Tag แต่สแกนไม่เจอ แปลว่ารูปแบบผิด หรือมีอักขระแปลกปลอม)`,
+      );
+    } else if (isManual && found) {
+      alert(`✅ สแกนเจอและอัปเดตแล้ว!`);
     }
   }
 
-  // --- เริ่มต้นทำงาน (Init) ---
+  // --- 5. Initialization ---
   function init() {
-    // 1. ล้างของเก่าทิ้งให้หมด (Clean up)
     $('#popko-root').remove();
     $('#popko-settings-panel').remove();
 
-    // 2. สร้าง Overlay ใหม่
     $('body').append(HTML_TEMPLATE);
+    if ($('#extensions_settings').length) $('#extensions_settings').append(SETTINGS_PANEL_HTML);
 
-    // 3. สร้าง Menu Panel (ถ้า ST โหลดเสร็จแล้ว)
-    if ($('#extensions_settings').length) {
-      $('#extensions_settings').append(SETTINGS_PANEL_HTML);
-    }
-
-    // --- ผูก Event (Click Listeners) ---
-
-    // ปุ่มหัวใจลอย (เปิด/ปิด Overlay)
-    $('#love-toggle-btn').on('click', function () {
-      $('#love-overlay').toggleClass('hidden');
-    });
-
-    // ปุ่ม Test +10
-    $('#btn-test-add').on('click', function () {
+    // Events
+    $('#love-toggle-btn').on('click', () => $('#love-overlay').toggleClass('hidden'));
+    $('#btn-test-add').on('click', () => {
       setScore(getScore() + 10);
       updateDisplay();
     });
-
-    // ปุ่ม Test -10
-    $('#btn-test-sub').on('click', function () {
+    $('#btn-test-sub').on('click', () => {
       setScore(getScore() - 10);
       updateDisplay();
     });
 
-    // ปุ่มใน Panel: ซ่อน/แสดง Widget ทั้งก้อน
+    // ปุ่ม Manual Scan (พระเอกของเรา)
+    $('#btn-force-scan').on('click', () => {
+      performScan(true); // true = manual mode (โชว์ alert)
+    });
+
+    // Menu Panel Events
     $('#menu-toggle-widget').on('click', function () {
       const btn = $('#love-toggle-btn');
       if (btn.is(':visible')) {
         btn.hide();
-        $('#love-overlay').addClass('hidden'); // ปิดหน้าต่างด้วย
+        $('#love-overlay').addClass('hidden');
         $(this).text('🔴 แสดงปุ่มหัวใจ');
       } else {
         btn.show();
         $(this).text('👁️ ซ่อนปุ่มหัวใจ');
       }
     });
-
-    // ปุ่มใน Panel: Reset
-    $('#menu-reset').on('click', function () {
-      if (confirm('รีเซ็ตค่าความรัก?')) {
+    $('#menu-reset').on('click', () => {
+      if (confirm('รีเซ็ตค่า?')) {
         setScore(0);
         updateDisplay();
       }
     });
 
-    // --- ระบบลากปุ่ม (Drag) ---
+    // Drag Logic
     const btn = document.getElementById('love-toggle-btn');
     let isDragging = false,
       offsetX,
@@ -186,39 +222,30 @@
       });
     }
 
-    // อัปเดตครั้งแรก
     updateDisplay();
   }
 
-  // --- Listener รอฟัง AI ---
+  // --- 6. Auto Listener ---
   function startListening() {
     if (!window.eventSource) {
       setTimeout(startListening, 1000);
       return;
     }
-    // เมื่อข้อความเด้งเข้ามา
+
     window.eventSource.on(window.event_types.MESSAGE_RECEIVED, () => {
+      // Delay 2 วินาที (เพิ่มเวลาให้ชัวร์ว่าข้อความขึ้นจอครบแล้ว)
       setTimeout(() => {
-        // อ่านข้อความล่าสุดจากตัวแปร
-        if (window.chat && window.chat.length > 0) {
-          // หาข้อความล่าสุดที่ไม่ใช่ของ User
-          for (let i = window.chat.length - 1; i >= 0; i--) {
-            if (!window.chat[i].is_user) {
-              scanAIResponse(window.chat[i].mes);
-              break;
-            }
-          }
-        }
-      }, 500);
+        console.log('[Popko] Auto-scanning message...');
+        performScan(false); // false = auto mode (ไม่โชว์ alert พร่ำเพรื่อ)
+      }, 2000);
     });
   }
 
-  // --- Run ---
   $(document).ready(function () {
     setTimeout(() => {
       init();
       startListening();
-      console.log('[Popko] Love Status Loaded (Clean Version)');
+      console.log('[Popko] Ready.');
     }, 500);
   });
 })();
