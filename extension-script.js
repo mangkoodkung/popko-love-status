@@ -1,8 +1,7 @@
 (function () {
   const EXT_ID = 'popko-love-status';
 
-  // 1. HTML Template (เอามาจาก index.html ของคุณ)
-  // เราต้องสร้าง HTML ผ่าน JS เพื่อ Inject เข้าหน้า SillyTavern
+  // ส่วนที่ 1: HTML Template (แปลงจาก index.html ของคุณมาเป็น String)
   const OVERLAY_HTML = `
         <div id="love-toggle-btn" title="Toggle Love Status">💗</div>
         <div id="love-overlay" class="hidden">
@@ -13,24 +12,23 @@
                 </div>
                 <div id="love-score-text">0</div>
                 <div class="test-buttons">
-                    <button id="btn-test-add">+10</button>
-                    <button id="btn-test-sub">-10</button>
+                    <button id="btn-test-add" class="menu_button">+10</button>
+                    <button id="btn-test-sub" class="menu_button">-10</button>
                 </div>
             </div>
         </div>
     `;
 
-  // State ตัวแปร
+  // State ตัวแปรความรัก
   let affinity = 0;
 
-  // --- Functions Logic (จาก script.js เดิม) ---
-
+  // ฟังก์ชันอัปเดตหลอดเลือด (จาก script.js เดิม)
   function updateLove() {
     const bar = document.getElementById('love-progress');
     const level = document.getElementById('love-level-text');
     const score = document.getElementById('love-score-text');
 
-    if (!bar || !level || !score) return; // ป้องกัน error ถ้า element ยังไม่เกิด
+    if (!bar) return; // ถ้ายังไม่สร้างหน้าจอ ก็ไม่ต้องทำอะไร
 
     let percent = Math.min(Math.max((affinity / 2000) * 100, 0), 100);
     bar.style.width = percent + '%';
@@ -44,40 +42,40 @@
     else level.textContent = '😞 ลดลง';
   }
 
+  // ฟังก์ชันสร้าง UI ลงบนหน้าจอ SillyTavern (แก้ปัญหา index.html ไม่โหลด)
   function injectOverlay() {
-    // เช็คก่อนว่ามีอยู่แล้วไหม ป้องกันซ้อนทับ
-    if (document.getElementById('love-toggle-btn')) return;
+    if (document.getElementById('popko-love-wrapper')) return; // ป้องกันสร้างซ้ำ
 
-    // สร้าง Div container แล้วแปะเข้า body
-    const container = document.createElement('div');
-    container.id = 'popko-love-wrapper';
-    container.innerHTML = OVERLAY_HTML;
-    document.body.appendChild(container);
+    const wrapper = document.createElement('div');
+    wrapper.id = 'popko-love-wrapper';
+    wrapper.innerHTML = OVERLAY_HTML;
+    document.body.appendChild(wrapper);
 
-    bindOverlayEvents();
+    // ผูก Event ต่างๆ หลังจากสร้าง Element เสร็จแล้ว
+    bindEvents();
     updateLove();
   }
 
-  function bindOverlayEvents() {
+  function bindEvents() {
     const toggleBtn = document.getElementById('love-toggle-btn');
     const overlay = document.getElementById('love-overlay');
 
-    // Toggle Show/Hide
+    // 1. ปุ่ม Toggle เปิด/ปิด
     toggleBtn.addEventListener('click', () => {
       overlay.classList.toggle('hidden');
     });
 
-    // ปุ่ม Test
-    document.getElementById('btn-test-add')?.addEventListener('click', () => {
+    // 2. ปุ่ม Test เพิ่ม/ลด
+    document.getElementById('btn-test-add').addEventListener('click', () => {
       affinity += 10;
       updateLove();
     });
-    document.getElementById('btn-test-sub')?.addEventListener('click', () => {
+    document.getElementById('btn-test-sub').addEventListener('click', () => {
       affinity -= 10;
       updateLove();
     });
 
-    // Drag Logic (ปุ่มลอย)
+    // 3. ระบบลากปุ่ม (Drag)
     let offsetX = 0,
       offsetY = 0,
       isDragging = false;
@@ -92,10 +90,9 @@
 
     document.addEventListener('mousemove', e => {
       if (!isDragging) return;
-      const x = e.clientX - offsetX;
-      const y = e.clientY - offsetY;
-      toggleBtn.style.left = `${x}px`;
-      toggleBtn.style.top = `${y}px`;
+      e.preventDefault(); // กันเลือก Text
+      toggleBtn.style.left = e.clientX - offsetX + 'px';
+      toggleBtn.style.top = e.clientY - offsetY + 'px';
       toggleBtn.style.right = 'auto';
       toggleBtn.style.bottom = 'auto';
     });
@@ -106,21 +103,17 @@
     });
   }
 
-  // --- SillyTavern Integration ---
-
+  // --- ส่วนเชื่อมต่อกับ SillyTavern ---
   const ext = {};
+  window['extension_' + EXT_ID] = ext; // ต้องประกาศตัวแปร global นี้ ST ถึงจะเห็น
 
-  // Namespace (สำคัญสำหรับการเรียกใช้จากภายนอก)
-  window['extension_' + EXT_ID] = ext;
-
-  // ฟังก์ชัน load จะถูกเรียกโดย SillyTavern เมื่อ Extension พร้อม
   ext.load = function () {
-    console.log('[Popko Love Status] Loaded');
+    console.log('[Popko Love Status] Extension Loaded!');
 
-    // 1. Inject UI เข้าหน้าจอ
+    // 1. สร้าง Overlay ทันทีที่โหลดเสร็จ
     injectOverlay();
 
-    // 2. เพิ่มเมนูเข้าไปใน Extensions Panel (Legacy/Standard way)
+    // 2. เพิ่มเมนูใน Extension Panel
     if (typeof addExtensionMenu === 'function') {
       addExtensionMenu({
         id: EXT_ID,
@@ -129,29 +122,17 @@
         html: `
                     <div style="padding: 10px;">
                         <h3>Popko Settings</h3>
-                        <p>จัดการค่าความสัมพันธ์ที่นี่</p>
                         <button id="popko-reset-btn" class="menu_button">รีเซ็ตค่าเป็น 0</button>
-                        <hr>
-                        <small>Overlay จะแสดงอยู่ที่มุมขวาล่างของจอ</small>
                     </div>
                 `,
       });
 
-      // ผูก Event ให้กับปุ่มในเมนู Setting (ต้องรอจังหวะนิดนึงหรือใช้ Delegate)
-      // แต่วิธีที่ง่ายที่สุดคือใช้ jQuery delegate event เพราะปุ่มนี้อาจถูกสร้างใหม่ได้
+      // ผูกปุ่มรีเซ็ตในเมนู (ใช้ jQuery delegate เพราะเมนูอาจถูกสร้างใหม่)
       $(document).on('click', '#popko-reset-btn', function () {
         affinity = 0;
         updateLove();
-        toastr.success('รีเซ็ตค่าความรักเรียบร้อย'); // แจ้งเตือนแบบ ST
+        alert('รีเซ็ตค่าความรักแล้ว!');
       });
     }
   };
-
-  // รองรับการรับค่าจาก LLM (Window Message)
-  window.addEventListener('message', ev => {
-    if (ev.data?.type === 'LOVE_CHANGE') {
-      affinity += parseInt(ev.data.value) || 0;
-      updateLove();
-    }
-  });
 })();
