@@ -1,35 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Love Status</title>
     <link rel="stylesheet" href="style.css" />
-</head>
+  </head>
 
-<body>
-
+  <body>
     <!-- ปุ่มเปิดปิด overlay -->
     <div id="love-toggle-btn">💗</div>
 
     <!-- หน้าต่าง Love Status -->
     <div id="love-overlay" class="hidden">
-        <div class="love-status-box">
-            <div id="love-level-text">Loading…</div>
+      <div class="love-status-box">
+        <div id="love-level-text">Loading…</div>
 
-            <div class="love-bar">
-                <div id="love-progress"></div>
-            </div>
-
-            <div id="love-score-text">0</div>
-
-            <!-- ปุ่มเทสต์เดี๋ยวเอาออกทีหลัง -->
-            <div class="test-buttons">
-                <button onclick="changeAffinity(10)">+10</button>
-                <button onclick="changeAffinity(-10)">-10</button>
-            </div>
+        <div class="love-bar">
+          <div id="love-progress"></div>
         </div>
+
+        <div id="love-score-text">0</div>
+
+        <!-- ปุ่มเทสต์เดี๋ยวเอาออกทีหลัง -->
+        <div class="test-buttons">
+          <button onclick="changeAffinity(10)">+10</button>
+          <button onclick="changeAffinity(-10)">-10</button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

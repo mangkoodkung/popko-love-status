@@ -43,34 +43,34 @@ window.addEventListener('message', ev => {
 updateLove();
 
 /* ========== ระบบลากปุ่มลอย (Drag Floating Button) ========== */
-const dragBtn = document.getElementById("love-toggle-btn");
+const dragBtn = document.getElementById('love-toggle-btn');
 
 let offsetX = 0;
 let offsetY = 0;
 let isDragging = false;
 
-dragBtn.addEventListener("mousedown", (e) => {
-    isDragging = true;
+dragBtn.addEventListener('mousedown', e => {
+  isDragging = true;
 
-    // ค่าที่เมาส์กดบนปุ่ม (เพื่อให้ปุ่มไม่กระโดด)
-    offsetX = e.clientX - dragBtn.getBoundingClientRect().left;
-    offsetY = e.clientY - dragBtn.getBoundingClientRect().top;
+  // ค่าที่เมาส์กดบนปุ่ม (เพื่อให้ปุ่มไม่กระโดด)
+  offsetX = e.clientX - dragBtn.getBoundingClientRect().left;
+  offsetY = e.clientY - dragBtn.getBoundingClientRect().top;
 });
 
-document.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
 
-    const x = e.clientX - offsetX;
-    const y = e.clientY - offsetY;
+  const x = e.clientX - offsetX;
+  const y = e.clientY - offsetY;
 
-    dragBtn.style.left = `${x}px`;
-    dragBtn.style.top = `${y}px`;
-    dragBtn.style.right = "auto";
-    dragBtn.style.bottom = "auto";
-    
-    dragBtn.style.position = "fixed";
+  dragBtn.style.left = `${x}px`;
+  dragBtn.style.top = `${y}px`;
+  dragBtn.style.right = 'auto';
+  dragBtn.style.bottom = 'auto';
+
+  dragBtn.style.position = 'fixed';
 });
 
-document.addEventListener("mouseup", () => {
-    isDragging = false;
+document.addEventListener('mouseup', () => {
+  isDragging = false;
 });
