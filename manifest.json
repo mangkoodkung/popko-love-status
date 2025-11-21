@@ -1,12 +1,12 @@
 {
-  "id": "popko-love-status",
-  "name": "Popko Love Status",
-  "version": "1.0.0",
+  "display_name": "Popko Love Status",
+  "loading_order": 50,
+  "requires": [],
+  "optional": [],
+  "js": "extension-script.js",
+  "css": "style.css",
+
   "author": "Popko",
-  "description": "Love relationship status overlay for SillyTavern.",
-  "type": "frontend",
-  "entry": "extension-script.js",
-  "js": ["extension-script.js"],
-  "css": ["style.css"],
-  "files": ["index.html", "script.js"]
+  "version": "1.0.0",
+  "description": "A floating overlay showing relationship affection/heart level."
 }
