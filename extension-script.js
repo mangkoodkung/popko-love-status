@@ -1,23 +1,18 @@
-import { registerExtension } from '../../extensions.js';
+(function () {
+  console.log('[Popko Love Status] Loaded!');
 
-registerExtension({
-  name: 'popko-love-status',
-  async setup() {
-    console.log('Popko Love Status Loaded!');
-
-    // โหลด UI เป็น iframe
+  // โหลด UI iframe
+  function loadUI() {
     const iframe = document.createElement('iframe');
-    iframe.src = '/extensions/popko-love-status/index.html';
+    iframe.src = 'index.html';
     iframe.style = `
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 0;
-            height: 0;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 160px;
             border: none;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -1;
+            z-index: 99999;
         `;
     document.body.appendChild(iframe);
 
@@ -25,7 +20,6 @@ registerExtension({
     window.addEventListener('st-message', ev => {
       const msg = ev.detail.message;
 
-      // ตรวจหา LOVE_CHANGE +XX
       const match = msg.match(/LOVE_CHANGE\s*([+-]?\d+)/i);
       if (match) {
         iframe.contentWindow.postMessage(
@@ -37,5 +31,10 @@ registerExtension({
         );
       }
     });
-  },
-});
+
+    console.log('[Popko Love Status] UI Loaded');
+  }
+
+  // รอจน DOM โหลดครบ
+  document.addEventListener('DOMContentLoaded', loadUI);
+})();
