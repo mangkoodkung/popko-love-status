@@ -1,12 +1,11 @@
 (function () {
-  const PLUGIN_ID = 'popko-love-status';
   const MAX_SCORE = 100; // คะแนนเต็ม
 
-  // 1. ดึงค่าความรักเดิม (ถ้ามี)
+  // 1. ดึงค่าความรักเดิม
   let storedAffinity = localStorage.getItem('popko_love_affinity');
   let affinity = storedAffinity ? parseInt(storedAffinity) : 0;
 
-  // 2. HTML ใหม่ (มีปุ่ม Scan แล้ว)
+  // 2. HTML Overlay
   const OVERLAY_HTML = `
         <div id="love-toggle-btn" title="Toggle Love Status">💗</div>
         <div id="love-overlay" class="hidden">
@@ -25,20 +24,20 @@
                 </div>
                 
                 <div style="margin-top:5px;">
-                     <button id="btn-love-scan" class="menu_button" style="width:100%; font-size: 11px; background: #666; color:white; padding: 4px;">🔍 Force Scan Last Msg</button>
+                     <button id="btn-love-scan" class="menu_button" style="width:100%; font-size: 11px; background: #666; color:white; padding: 4px;">🔍 Force Scan (DOM Mode)</button>
                 </div>
             </div>
         </div>
     `;
 
-  // --- ฟังก์ชันอัปเดตหน้าจอ ---
+  // --- ฟังก์ชันอัปเดต UI ---
   function updateLoveUI() {
     const bar = document.getElementById('love-progress');
     const level = document.getElementById('love-level-text');
     const score = document.getElementById('love-score-text');
     if (!bar) return;
 
-    localStorage.setItem('popko_love_affinity', affinity); // Save
+    localStorage.setItem('popko_love_affinity', affinity);
 
     let percent = (affinity / MAX_SCORE) * 100;
     percent = Math.min(Math.max(percent, 0), 100);
@@ -55,42 +54,83 @@
     else level.textContent = '💔 เกลียด (Hated)';
   }
 
-  // --- Logic แปลงข้อความ ---
-  function parseAndChangeLove(text) {
+  // --- Logic แปลงข้อความ (Core) ---
+  function processMessageText(text, sourceName) {
     if (!text) return false;
-    // Regex ที่ยืดหยุ่นขึ้น (รับเว้นวรรค และตัวใหญ่ตัวเล็ก)
+    // Regex จับแพทเทิร์น [LOVE: +20]
     const regex = /\[\s*(?:LOVE|AFFINITY)\s*[:=]\s*([+-]?\s*\d+)\s*\]/i;
     const match = text.match(regex);
 
     if (match) {
       const points = parseInt(match[1].replace(/\s/g, ''));
       if (!isNaN(points)) {
-        console.log(`[Popko] Found: ${points}%`);
+        console.log(`[Popko] Found ${points}% via ${sourceName}`);
         affinity += points;
         if (affinity > MAX_SCORE) affinity = MAX_SCORE;
         if (affinity < 0) affinity = 0;
         updateLoveUI();
-        if (typeof toastr !== 'undefined') toastr.success(`Status Updated: ${points > 0 ? '+' : ''}${points}%`);
+        if (typeof toastr !== 'undefined')
+          toastr.success(`อ่านค่าสำเร็จ (${sourceName}): ${points > 0 ? '+' : ''}${points}%`);
         return true;
       }
     }
     return false;
   }
 
-  // --- ฟังก์ชันสร้างหน้าจอ (แก้ใหม่: ลบของเก่าทิ้งก่อนสร้าง) ---
+  // --- ฟังก์ชันค้นหาข้อความ (The Nuclear Option) ---
+  function findAndProcessLastMessage(isAuto = false) {
+    let foundText = '';
+    let method = '';
+
+    // วิธีที่ 1: ลองอ่านจากตัวแปร window.chat (วิธีมาตรฐาน)
+    if (window.chat && window.chat.length > 0) {
+      // วนหาข้อความล่าสุดที่ไม่ใช่ของ User
+      for (let i = window.chat.length - 1; i >= 0; i--) {
+        if (!window.chat[i].is_user) {
+          foundText = window.chat[i].mes;
+          method = 'Variable (window.chat)';
+          break;
+        }
+      }
+    }
+
+    // วิธีที่ 2: ถ้าวิธีแรกไม่เจอ ให้ลองอ่านจาก HTML บนหน้าจอโดยตรง (DOM Scraping)
+    // นี่คือวิธีแก้เผ็ด ถ้าตัวแปรมันว่างนัก ก็อ่านจากจอมันซะเลย!
+    if (!foundText) {
+      const mesTexts = document.querySelectorAll('.mes_text');
+      if (mesTexts.length > 0) {
+        // เอาอันสุดท้ายที่โชว์บนจอ
+        const lastMsgElement = mesTexts[mesTexts.length - 1];
+        foundText = lastMsgElement.innerText;
+        method = 'Screen Reading (DOM)';
+      }
+    }
+
+    if (foundText) {
+      const success = processMessageText(foundText, method);
+      if (!success && !isAuto) {
+        alert(
+          `อ่านข้อความได้จาก ${method} แต่ไม่พบ Tag [LOVE: +/-N]\n\nข้อความที่อ่านได้:\n"${foundText.substring(
+            0,
+            100,
+          )}..."`,
+        );
+      }
+    } else {
+      if (!isAuto) alert('❌ ไม่สามารถอ่านข้อความได้เลย (ทั้งจากตัวแปรและหน้าจอ)');
+    }
+  }
+
+  // --- ฟังก์ชันสร้าง UI ---
   function initOverlay() {
-    // ⚠️ ล้างของเก่าทิ้งให้หมดก่อน (สำคัญมาก)
     $('#love-toggle-btn').remove();
     $('#love-overlay').remove();
     $('#popko-love-wrapper').remove();
 
-    // สร้างใหม่
     $('body').append(OVERLAY_HTML);
 
-    // ผูกปุ่ม Toggle
     $('#love-toggle-btn').on('click', () => $('#love-overlay').toggleClass('hidden'));
 
-    // ผูกปุ่ม Test
     $('#btn-love-add').on('click', () => {
       affinity = Math.min(affinity + 10, MAX_SCORE);
       updateLoveUI();
@@ -104,38 +144,16 @@
       updateLoveUI();
     });
 
-    // ผูกปุ่ม SCAN (ตัวใหม่)
+    // ปุ่ม Force Scan
     $('#btn-love-scan').on('click', function () {
-      // เอฟเฟกต์กดปุ่ม
-      $(this).text('Scanning...');
-      setTimeout(() => $(this).text('🔍 Force Scan Last Msg'), 1000);
-
-      if (window.chat && window.chat.length > 0) {
-        // หาข้อความล่าสุดที่ไม่ใช่ของ User
-        let lastBotMsg = null;
-        for (let i = window.chat.length - 1; i >= 0; i--) {
-          if (!window.chat[i].is_user) {
-            lastBotMsg = window.chat[i];
-            break;
-          }
-        }
-
-        if (lastBotMsg) {
-          const found = parseAndChangeLove(lastBotMsg.mes);
-          if (!found) {
-            alert(`❌ ไม่เจอ Tag [LOVE: +/-N] ในข้อความล่าสุด:\n\n"${lastBotMsg.mes.substring(0, 100)}..."`);
-          } else {
-            alert(`✅ เจอแล้ว! อัปเดตค่าเรียบร้อย`);
-          }
-        } else {
-          alert('❌ ไม่พบข้อความตอบกลับจากบอท');
-        }
-      } else {
-        alert('❌ ไม่พบประวัติการแชท');
-      }
+      $(this).text('Scanning Screen...');
+      setTimeout(() => {
+        findAndProcessLastMessage(false); // สแกนแบบ Manual
+        $(this).text('🔍 Force Scan (DOM Mode)');
+      }, 500);
     });
 
-    // ระบบลากปุ่ม (Drag)
+    // Drag Logic
     const btn = document.getElementById('love-toggle-btn');
     let isDragging = false,
       offsetX,
@@ -165,22 +183,24 @@
     updateLoveUI();
   }
 
-  // --- เริ่มต้น ---
+  // --- Auto Listener ---
   function initAIListener() {
     if (!window.eventSource) {
       setTimeout(initAIListener, 1000);
       return;
     }
+
+    // ดักจับเมื่อได้รับข้อความใหม่
     window.eventSource.on(window.event_types.MESSAGE_RECEIVED, () => {
+      // รอ 1 วินาที ให้ข้อความขึ้นจอชัวร์ๆ แล้วสั่งสแกน
       setTimeout(() => {
-        $('#btn-love-scan').click(); // สั่งกดปุ่ม Scan อัตโนมัติเมื่อมีข้อความเข้า
-      }, 500);
+        findAndProcessLastMessage(true);
+      }, 1000);
     });
   }
 
   $(document).ready(function () {
     initOverlay();
     initAIListener();
-    console.log('[Popko Love] Interface Force-Reloaded!');
   });
 })();
