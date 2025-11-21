@@ -1,43 +1,36 @@
 (function () {
   const MAX_SCORE = 100;
 
-  // --- 1. Helper Functions ---
+  // --- Helper Functions ---
   function getScore() {
     const val = localStorage.getItem('popko_love_score');
     return val ? parseInt(val, 10) : 0;
   }
 
   function setScore(val) {
-    // ป้องกันค่าเกินขอบเขต
     if (val > MAX_SCORE) val = MAX_SCORE;
     if (val < 0) val = 0;
     localStorage.setItem('popko_love_score', val);
     return val;
   }
 
-  // --- 2. HTML Templates ---
+  // --- HTML Templates ---
   const HTML_TEMPLATE = `
         <div id="popko-root">
             <div id="love-toggle-btn">💗</div>
-
             <div id="love-overlay" class="hidden">
                 <div class="love-status-box">
                     <div id="love-level-text">Ready</div>
-                    
                     <div class="love-bar-container">
                         <div id="love-progress"></div>
                         <div id="love-score-text">0%</div>
                     </div>
-
                     <div class="test-buttons">
                         <button id="btn-test-add">+10</button>
                         <button id="btn-test-sub">-10</button>
                     </div>
-                    
                     <div style="margin-top:8px;">
-                        <button id="btn-force-scan" style="width:100%; background:#666; color:white; font-size:11px; padding:5px; border:none; border-radius:5px; cursor:pointer;">
-                            🔍 Force Scan (ตรวจสอบ)
-                        </button>
+                        <button id="btn-force-scan" style="width:100%; background:#888;">🔍 Check</button>
                     </div>
                 </div>
             </div>
@@ -51,17 +44,16 @@
                 <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
             </div>
             <div class="extension_content" style="display:none; padding: 10px;">
-                <button id="menu-toggle-widget" class="menu_button" style="width:100%; margin-bottom:5px;">👁️ ซ่อน/แสดง ปุ่มหัวใจ</button>
-                <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc;">🗑️ รีเซ็ตค่าเป็น 0</button>
+                <button id="menu-toggle-widget" class="menu_button" style="width:100%; margin-bottom:5px;">👁️ ซ่อน/แสดง ปุ่ม</button>
+                <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc;">🗑️ รีเซ็ต 0</button>
             </div>
         </div>
     `;
 
-  // --- 3. Display Logic ---
+  // --- Display ---
   function updateDisplay() {
     const score = getScore();
     const percent = (score / MAX_SCORE) * 100;
-
     const bar = document.getElementById('love-progress');
     const text = document.getElementById('love-score-text');
     const label = document.getElementById('love-level-text');
@@ -70,89 +62,126 @@
       bar.style.width = `${percent}%`;
       text.innerText = `${Math.round(percent)}%`;
 
-      if (percent >= 100) label.innerText = '💍 คู่ชีวิต (Soulmate)';
-      else if (percent >= 80) label.innerText = '💖 คลั่งรัก (Obsessed)';
-      else if (percent >= 60) label.innerText = '🌹 คนรัก (Lover)';
-      else if (percent >= 40) label.innerText = '💞 จีบ (Crush)';
-      else if (percent >= 20) label.innerText = '😊 เพื่อน (Friend)';
-      else label.innerText = '😐 คนรู้จัก (Neutral)';
+      if (percent >= 100) label.innerText = '💍 คู่ชีวิต';
+      else if (percent >= 80) label.innerText = '💖 คลั่งรัก';
+      else if (percent >= 60) label.innerText = '🌹 คนรัก';
+      else if (percent >= 40) label.innerText = '💞 จีบ';
+      else if (percent >= 20) label.innerText = '😊 เพื่อน';
+      else label.innerText = '😐 คนรู้จัก';
     }
   }
 
-  // --- 4. Scanning Logic (The Detective) ---
-
-  function tryParseText(text, sourceName) {
+  // --- Scanner ---
+  function tryParseText(text) {
     if (!text) return false;
-
-    // Regex แบบครอบจักรวาล:
-    // - รับทั้ง LOVE และ AFFINITY (ตัวเล็ก/ใหญ่)
-    // - รับ : หรือ =
-    // - รับเว้นวรรคกี่ตัวก็ได้
-    // - รับเครื่องหมาย + หรือ - หรือไม่มีก็ได้
-    // - รับตัวเลข
     const regex = /\[\s*(?:LOVE|AFFINITY)\s*[:=]\s*([+\-]?\s*\d+)\s*\]/i;
-
     const match = text.match(regex);
-
     if (match) {
-      const numStr = match[1].replace(/\s/g, ''); // ลบเว้นวรรคทิ้งให้หมด
-      const points = parseInt(numStr, 10);
-
+      const points = parseInt(match[1].replace(/\s/g, ''), 10);
       if (!isNaN(points)) {
-        console.log(`[Popko] ✅ Match Found! Points: ${points} Source: ${sourceName}`);
-
-        let current = getScore();
-        setScore(current + points);
+        console.log(`[Popko] Points: ${points}`);
+        setScore(getScore() + points);
         updateDisplay();
-
-        if (typeof toastr !== 'undefined') {
-          toastr.success(`Love Updated: ${points > 0 ? '+' : ''}${points}%`);
-        }
-        return true; // เจอแล้ว!
+        if (typeof toastr !== 'undefined') toastr.success(`Love: ${points > 0 ? '+' : ''}${points}%`);
+        return true;
       }
     }
-    return false; // ไม่เจอ
+    return false;
   }
 
-  // ฟังก์ชันหลักที่ใช้อ่านหน้าจอ
   function performScan(isManual = false) {
     let found = false;
-    let debugText = '';
-
-    // วิธีที่ 1: อ่านจาก DOM (หน้าจอ) - แม่นยำสุดเพราะคือสิ่งที่ตาเห็น
-    // หา element ที่ชื่อ class "mes_text" ตัวสุดท้าย
+    // 1. DOM
     const domMsgs = document.querySelectorAll('.mes_text');
     if (domMsgs.length > 0) {
-      const lastMsg = domMsgs[domMsgs.length - 1];
-      const textContent = lastMsg.innerText; // ใช้ innerText จะได้ข้อความเพียวๆ
-
-      debugText = textContent.substring(0, 100) + '...'; // เก็บไว้ดูตอน debug
-      found = tryParseText(textContent, 'DOM (Screen)');
+      found = tryParseText(domMsgs[domMsgs.length - 1].innerText);
     }
-
-    // วิธีที่ 2: ถ้าหน้าจอหาไม่เจอ ลองไปดูในตัวแปรระบบ (Backup)
+    // 2. Variable
     if (!found && window.chat && window.chat.length > 0) {
-      // วนหาข้อความล่าสุดที่ไม่ใช่ของ User
       for (let i = window.chat.length - 1; i >= 0; i--) {
         if (!window.chat[i].is_user) {
-          found = tryParseText(window.chat[i].mes, 'Variable (Chat)');
-          if (!debugText) debugText = window.chat[i].mes.substring(0, 50);
+          found = tryParseText(window.chat[i].mes);
           break;
         }
       }
     }
-
-    // ถ้ากดปุ่ม Scan แล้วยังไม่เจอ ให้ฟ้องผู้ใช้
-    if (isManual && !found) {
-      alert(
-        `❌ สแกนไม่พบ Tag [LOVE: +/-N]\n\nข้อความล่าสุดที่สแกนเจอคือ:\n"${debugText}"\n\n(ถ้ามี Tag แต่สแกนไม่เจอ แปลว่ารูปแบบผิด หรือมีอักขระแปลกปลอม)`,
-      );
-    } else if (isManual && found) {
-      alert(`✅ สแกนเจอและอัปเดตแล้ว!`);
-    }
+    if (isManual) alert(found ? '✅ เจอแล้ว!' : '❌ ไม่พบ Tag [LOVE]');
   }
 
-  // --- 5. Initialization ---
+  // --- Drag System (Mouse + Touch) ---
+  function makeDraggable(element) {
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    // 1. Mouse Events
+    element.addEventListener('mousedown', e => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = element.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      element.style.cursor = 'grabbing';
+    });
+
+    // 2. Touch Events (สำหรับมือถือ)
+    element.addEventListener(
+      'touchstart',
+      e => {
+        isDragging = true;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        const rect = element.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+      },
+      { passive: false },
+    );
+
+    // Move Handler (Shared)
+    const onMove = (clientX, clientY) => {
+      if (!isDragging) return;
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+
+      // ใช้ Fixed Position แบบคำนวณจาก Top/Left แทน Bottom/Right
+      element.style.position = 'fixed';
+      element.style.left = `${initialLeft + dx}px`;
+      element.style.top = `${initialTop + dy}px`;
+      element.style.right = 'auto';
+      element.style.bottom = 'auto';
+    };
+
+    window.addEventListener('mousemove', e => {
+      if (isDragging) {
+        e.preventDefault();
+        onMove(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener(
+      'touchmove',
+      e => {
+        if (isDragging) {
+          e.preventDefault(); // กันหน้าจอเลื่อน
+          const touch = e.touches[0];
+          onMove(touch.clientX, touch.clientY);
+        }
+      },
+      { passive: false },
+    );
+
+    // End Handler
+    const onEnd = () => {
+      isDragging = false;
+      element.style.cursor = 'grab';
+    };
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+  }
+
+  // --- Init ---
   function init() {
     $('#popko-root').remove();
     $('#popko-settings-panel').remove();
@@ -170,13 +199,9 @@
       setScore(getScore() - 10);
       updateDisplay();
     });
+    $('#btn-force-scan').on('click', () => performScan(true));
 
-    // ปุ่ม Manual Scan (พระเอกของเรา)
-    $('#btn-force-scan').on('click', () => {
-      performScan(true); // true = manual mode (โชว์ alert)
-    });
-
-    // Menu Panel Events
+    // Menu Panel
     $('#menu-toggle-widget').on('click', function () {
       const btn = $('#love-toggle-btn');
       if (btn.is(':visible')) {
@@ -189,55 +214,27 @@
       }
     });
     $('#menu-reset').on('click', () => {
-      if (confirm('รีเซ็ตค่า?')) {
+      if (confirm('Reset?')) {
         setScore(0);
         updateDisplay();
       }
     });
 
-    // Drag Logic
+    // Apply Dragging
     const btn = document.getElementById('love-toggle-btn');
-    let isDragging = false,
-      offsetX,
-      offsetY;
-    if (btn) {
-      btn.addEventListener('mousedown', e => {
-        isDragging = true;
-        const rect = btn.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
-        btn.style.cursor = 'grabbing';
-      });
-      document.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        e.preventDefault();
-        btn.style.left = e.clientX - offsetX + 'px';
-        btn.style.top = e.clientY - offsetY + 'px';
-        btn.style.right = 'auto';
-        btn.style.bottom = 'auto';
-      });
-      document.addEventListener('mouseup', () => {
-        isDragging = false;
-        btn.style.cursor = 'grab';
-      });
-    }
+    if (btn) makeDraggable(btn);
 
     updateDisplay();
   }
 
-  // --- 6. Auto Listener ---
+  // --- Listener ---
   function startListening() {
     if (!window.eventSource) {
       setTimeout(startListening, 1000);
       return;
     }
-
     window.eventSource.on(window.event_types.MESSAGE_RECEIVED, () => {
-      // Delay 2 วินาที (เพิ่มเวลาให้ชัวร์ว่าข้อความขึ้นจอครบแล้ว)
-      setTimeout(() => {
-        console.log('[Popko] Auto-scanning message...');
-        performScan(false); // false = auto mode (ไม่โชว์ alert พร่ำเพรื่อ)
-      }, 2000);
+      setTimeout(() => performScan(false), 2000);
     });
   }
 
@@ -245,7 +242,7 @@
     setTimeout(() => {
       init();
       startListening();
-      console.log('[Popko] Ready.');
+      console.log('[Popko] Mobile Ready.');
     }, 500);
   });
 })();
