@@ -1,0 +1,9 @@
+{
+  "id": "popko-love-status",
+  "name": "Popko Love Status",
+  "version": "1.0.0",
+  "author": "Popko",
+  "entry": "extension-script.js",
+  "files": ["index.html", "style.css", "script.js"],
+  "type": "frontend"
+}
