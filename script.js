@@ -81,7 +81,7 @@ document.addEventListener('mouseup', () => {
 
 // 1) สร้าง UI Settings
 function createSettingsHTML() {
-    return `
+  return `
         <div class="extension-root">
             <div class="inline-drawer">
                 <div class="inline-drawer-toggle inline-drawer-header">
@@ -117,73 +117,78 @@ function createSettingsHTML() {
 
 // 2) นำ HTML ไปใส่ในหน้าต่าง Extensions
 function createSettingsInterface() {
-    if (document.getElementById("popko-love-status-settings")) return;
+  if (document.getElementById('popko-love-status-settings')) return;
 
-    const root = document.getElementById("extensions_settings");
-    if (!root) return;
+  const root = document.getElementById('extensions_settings');
+  if (!root) return;
 
-    const wrapper = document.createElement("div");
-    wrapper.id = "popko-love-status-settings";
-    wrapper.innerHTML = createSettingsHTML();
+  const wrapper = document.createElement('div');
+  wrapper.id = 'popko-love-status-settings';
+  wrapper.innerHTML = createSettingsHTML();
 
-    root.appendChild(wrapper);
+  root.appendChild(wrapper);
 }
 
 // 3) ฟังก์ชันเปิด/ปิด เมนูแบบ accordion
 function bindCollapsibleEvents() {
-    const drawer = document.querySelector("#popko-love-status-settings .inline-drawer-toggle");
-    const content = document.querySelector("#popko-love-status-settings .inline-drawer-content");
-    const icon = document.querySelector("#popko-love-status-settings .inline-drawer-icon");
+  const drawer = document.querySelector('#popko-love-status-settings .inline-drawer-toggle');
+  const content = document.querySelector('#popko-love-status-settings .inline-drawer-content');
+  const icon = document.querySelector('#popko-love-status-settings .inline-drawer-icon');
 
-    if (!drawer || !content) return;
+  if (!drawer || !content) return;
 
-    drawer.addEventListener("click", () => {
-        const isOpen = content.style.display !== "none";
-        if (isOpen) {
-            content.style.display = "none";
-            icon.classList.remove("down");
-            icon.classList.add("right");
-        } else {
-            content.style.display = "block";
-            icon.classList.remove("right");
-            icon.classList.add("down");
-        }
-    });
+  drawer.addEventListener('click', () => {
+    const isOpen = content.style.display !== 'none';
+    if (isOpen) {
+      content.style.display = 'none';
+      icon.classList.remove('down');
+      icon.classList.add('right');
+    } else {
+      content.style.display = 'block';
+      icon.classList.remove('right');
+      icon.classList.add('down');
+    }
+  });
 }
 
 // 4) Event เมนู
 function bindMenuEvents() {
-    // reset button
-    const resetBtn = document.querySelector(".menu-reset-btn");
-    if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-            affinity = 0;
-            updateLoveBar();
-            alert("รีเซ็ตสำเร็จ!");
-        });
-    }
+  // reset button
+  const resetBtn = document.querySelector('.menu-reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      affinity = 0;
+      updateLoveBar();
+      alert('รีเซ็ตสำเร็จ!');
+    });
+  }
 
-    // toggle overlay
-    const toggleOverlayBtn = document.querySelector(".menu-toggle-overlay");
-    if (toggleOverlayBtn) {
-        toggleOverlayBtn.addEventListener("click", () => {
-            const box = document.querySelector(".love-status-box");
-            if (!box) return;
+  // toggle overlay
+  const toggleOverlayBtn = document.querySelector('.menu-toggle-overlay');
+  if (toggleOverlayBtn) {
+    toggleOverlayBtn.addEventListener('click', () => {
+      const box = document.querySelector('.love-status-box');
+      if (!box) return;
 
-            const isHidden = box.style.display === "none";
-            box.style.display = isHidden ? "block" : "none";
-        });
-    }
+      const isHidden = box.style.display === 'none';
+      box.style.display = isHidden ? 'block' : 'none';
+    });
+  }
 }
 
 // 5) init plugin
 function initLoveStatusPlugin() {
-    createSettingsInterface();
-    bindCollapsibleEvents();
-    bindMenuEvents();
+  createSettingsInterface();
+  bindCollapsibleEvents();
+  bindMenuEvents();
 }
 
 // 6) ให้มันทำงานเมื่อเปิด SillyTavern
-document.addEventListener("DOMContentLoaded", () => {
-    initLoveStatusPlugin();
+document.addEventListener('DOMContentLoaded', () => {
+  initLoveStatusPlugin();
 });
+
+window.resetLoveAffinity = function () {
+  affinity = 0;
+  updateLoveBar();
+};
