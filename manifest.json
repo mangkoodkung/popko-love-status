@@ -3,7 +3,10 @@
   "name": "Popko Love Status",
   "version": "1.0.0",
   "author": "Popko",
+  "description": "Love relationship status overlay for SillyTavern.",
+  "type": "frontend",
   "entry": "extension-script.js",
-  "files": ["index.html", "style.css", "script.js"],
-  "type": "frontend"
+  "js": ["extension-script.js"],
+  "css": ["style.css"],
+  "files": ["index.html", "script.js"]
 }
