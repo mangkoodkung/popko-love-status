@@ -1,34 +1,35 @@
 (function () {
-  const MAX_SCORE = 200; // --- 1. CSS Style (โทนม่วงอ่อน ฟรุ้งฟริ้ง) ---
+  const MAX_SCORE = 200; // --- 1. CSS Style (โทนม่วงอ่อน + แก้ไข Z-Index) ---
 
   const CSS_STYLE = `
         #popko-root {
             position: fixed;
-            z-index: 9999;
-            top: 50px;
-            right: 10px;
+            z-index: 2147483647 !important; /* สูงสุดเท่าที่จะเป็นไปได้ */
+            top: 60px; /* ขยับลงมานิดนึงเผื่อติด Top bar */
+            right: 15px;
             touch-action: none;
         }
         #love-toggle-btn {
-            width: 40px; 
-            height: 40px;
+            width: 45px; 
+            height: 45px;
             border-radius: 50%;
-            background: #E0BBE4; /* ม่วงอ่อนน่ารัก */
-            display: flex;
+            background: #E0BBE4; /* ม่วงอ่อน */
+            display: flex !important; /* บังคับแสดงผล */
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
             cursor: grab;
-            border: 2px solid #957DAD; /* ม่วงเข้มขึ้นสำหรับขอบ */
+            border: 2px solid #957DAD; 
             box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            user-select: none;
         }
         #love-overlay {
             position: absolute;
             right: 0;
-            top: 50px;
+            top: 55px;
             width: 220px; 
-            background: rgba(240, 220, 245, 0.95); /* ม่วงอ่อนมากกึ่งโปร่งใส */
-            border: 3px solid #C3A7D6; /* ม่วงกลางสำหรับขอบ */
+            background: rgba(240, 220, 245, 0.95); /* ม่วงอ่อน */
+            border: 3px solid #C3A7D6; 
             border-radius: 15px; 
             padding: 12px;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
@@ -36,8 +37,8 @@
         .love-bar-container {
             position: relative;
             height: 25px; 
-            background: #F8F2FB; /* พื้นหลังหลอดสีขาวม่วงอ่อน */
-            border: 1px solid #D6B6E0; /* ขอบหลอดม่วงอ่อน */
+            background: #F8F2FB; 
+            border: 1px solid #D6B6E0; 
             border-radius: 12px; 
             overflow: hidden;
             margin: 8px 0; 
@@ -45,7 +46,7 @@
         }
         #love-progress {
             height: 100%;
-            background: linear-gradient(90deg, #FFC0CB, #EE82EE); /* ชมพูอ่อนไปม่วงชมพู */
+            background: linear-gradient(90deg, #FFC0CB, #EE82EE); 
             transition: width 0.8s ease-out; 
         }
         #love-score-text {
@@ -55,9 +56,9 @@
             width: 100%;
             text-align: center;
             line-height: 25px; 
-            color: white; /* ตัวเลขเปอร์เซ็นต์สีขาว */
+            color: white; 
             font-weight: bold;
-            text-shadow: 1px 1px 2px #A64D79; /* เงาสีม่วงเข้ม */
+            text-shadow: 1px 1px 2px #A64D79; 
             font-size: 14px;
             z-index: 1; 
         }
@@ -65,19 +66,19 @@
             text-align: center;
             font-size: 18px;
             font-weight: 800; 
-            color: #8A2BE2; /* สีม่วงเข้ม */
-            text-shadow: 0 0 5px rgba(138, 43, 226, 0.5); /* เงาฟรุ้งฟริ้ง */
+            color: #8A2BE2; 
+            text-shadow: 0 0 5px rgba(138, 43, 226, 0.5); 
             margin-bottom: 5px;
         }
         .status-text {
-            color: #7B68EE; /* สีม่วงอมฟ้าสำหรับสถานะ */
+            color: #7B68EE; 
             font-size: 11px;
             margin-top: 5px;
             text-align: center;
         }
         #btn-force-scan {
-            background: #F0E6FA !important; /* พื้นหลังปุ่มม่วงอ่อนมาก */
-            color: #9370DB !important; /* ตัวอักษรสีม่วงกลาง */
+            background: #F0E6FA !important; 
+            color: #9370DB !important; 
             border: 1px solid #C3A7D6 !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             font-weight: bold;
@@ -85,7 +86,7 @@
         .hidden {
             display: none !important;
         }
-    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือนเดิม) ---
+    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ ---
 
   function getCurrentCharKey() {
     if (typeof window.this_chid !== 'undefined' && window.characters && window.characters[window.this_chid]) {
@@ -105,7 +106,7 @@
     const key = getCurrentCharKey();
     localStorage.setItem(key, val);
     return val;
-  } // --- 3. HTML Templates (ปรับปรุงเพื่อให้ UI สวยขึ้น) ---
+  } // --- 3. HTML Templates ---
 
   const HTML_TEMPLATE = `
         <div id="popko-root">
@@ -132,7 +133,7 @@
   const SETTINGS_PANEL_HTML = `
         <div id="popko-settings-panel" class="extension_block">
             <div class="extension_name">
-                Popko Love Status (V4.4)
+                Popko Love Status (V4.5)
                 <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
             </div>
             <div class="extension_content" style="display:none; padding: 10px;">
@@ -142,7 +143,7 @@
                 <div id="score-history-list" style="display:none;"></div>
             </div>
         </div>
-    `; // --- 4. Display Logic (ปรับระดับความรักและไอคอน) ---
+    `; // --- 4. Display Logic ---
 
   function updateDisplay() {
     const score = getScore();
@@ -154,7 +155,7 @@
 
     if (bar && text && label) {
       bar.style.width = `${percent}%`;
-      text.innerText = `${Math.round(percent)}%`; // ปรับเกณฑ์ระดับความรักและไอคอน
+      text.innerText = `${Math.round(percent)}%`;
 
       if (percent >= 90) label.innerHTML = `💍 **คู่ชีวิต** 💖`;
       else if (percent >= 70) label.innerHTML = `💖 **คลั่งรัก** 🌹`;
@@ -163,7 +164,7 @@
       else if (percent >= 10) label.innerHTML = `🤝 **เพื่อน** 😉`;
       else label.innerHTML = `😐 **คนรู้จัก** 💬`;
     }
-  } // --- 5. Scanning Logic (เหมือนเดิม) ---
+  } // --- 5. Scanning Logic ---
 
   function tryParseText(text) {
     if (!text) return false;
@@ -209,7 +210,7 @@
       alert(found ? '✅ เจอและอัปเดตแล้ว!' : '❌ ไม่พบ Tag [LOVE]');
     }
     return found;
-  } // --- 6. Init และ History Logic (ปรับสีเล็กน้อย) ---
+  } // --- 6. Init และ History Logic ---
 
   function getSavedCharacterScores() {
     const scores = [];
@@ -259,8 +260,9 @@
 
   function init() {
     $('#popko-root').remove();
-    $('#popko-settings-panel').remove();
-    $('head').append('<style id="popko-style">' + CSS_STYLE + '</style>');
+    $('#popko-settings-panel').remove(); // ********************************** // ลบ Style เก่าทิ้งก่อน (สำคัญ!)
+    $('#popko-style').remove(); // เพิ่ม Style ใหม่
+    $('head').append('<style id="popko-style">' + CSS_STYLE + '</style>'); // **********************************
     $('body').append(HTML_TEMPLATE);
     if ($('#extensions_settings').length) $('#extensions_settings').append(SETTINGS_PANEL_HTML); // Events
 
@@ -287,7 +289,7 @@
         setScore(0);
         updateDisplay();
       }
-    }); // Drag Logic (Touch & Mouse) - เหมือนเดิม
+    });
     const makeDraggable = element => {
       let isDragging = false,
         startX,
@@ -381,7 +383,7 @@
     setTimeout(() => {
       init();
       startListening();
-      console.log('[Popko] V4.4 Loaded (Soft Purple UI)');
+      console.log('[Popko] V4.5 Loaded (Fix Missing Button + Soft Purple)');
     }, 500);
   });
 })();
