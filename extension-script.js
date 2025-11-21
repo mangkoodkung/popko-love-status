@@ -1,34 +1,41 @@
-// ใช้ระบบ Extension API แบบใหม่ของ SillyTavern
+(function () {
+  const EXT_ID = 'popko-love-status';
 
-export function getSettings() {
-  return {
-    name: 'Popko Love Status',
-    id: 'popko-love-status',
-    description: 'Love Status Overlay Control Panel',
-    version: '1.0.0',
+  // Namespace (ต้องใช้ global เท่านั้น)
+  if (!window['extension_' + EXT_ID]) {
+    window['extension_' + EXT_ID] = {};
+  }
+
+  const ext = window['extension_' + EXT_ID];
+
+  // ต้องมี ไม่งั้น ST ไม่โชว์ panel
+  ext.settings = {};
+
+  // Load function ที่ ST เรียกแบบ legacy
+  ext.load = function () {
+    console.log('[Popko Love Status] Loaded (legacy mode)');
+
+    if (typeof addExtensionMenu !== 'function') {
+      console.warn('addExtensionMenu not found, ST version mismatch!');
+      return;
+    }
+
+    addExtensionMenu({
+      id: EXT_ID,
+      title: 'Popko Love Status',
+      description: 'Love Status Overlay Control Panel',
+      html: `
+                <div style="padding: 10px;">
+                    <h3>Popko Love Status</h3>
+
+                    <button id="love-reset-btn">รีเซ็ตค่าความรัก</button><br><br>
+                    <button id="love-toggle-btn">ซ่อน/แสดง Overlay</button>
+                </div>
+            `,
+    });
   };
-}
 
-export function onLoad() {
-  console.log('[Popko Love Status] Loaded!');
-
-  addExtensionMenu({
-    id: 'popko-love-status',
-    title: 'Popko Love Status',
-    description: 'Love Status Overlay Control Panel',
-    html: `
-            <div style="padding: 10px;">
-                <h3 style="margin-top: 0;">Popko Love Status</h3>
-
-                <button id="love-reset-btn" class="menu-btn">รีเซ็ตความสัมพันธ์</button>
-                <br><br>
-
-                <button id="love-toggle-btn" class="menu-btn">แสดง / ซ่อน Overlay</button>
-            </div>
-        `,
-  });
-
-  // Event ให้ปุ่มใน Panel
+  // Event handlers
   document.addEventListener('click', e => {
     if (e.target.id === 'love-reset-btn') {
       if (window.resetLoveAffinity) window.resetLoveAffinity();
@@ -36,9 +43,8 @@ export function onLoad() {
     if (e.target.id === 'love-toggle-btn') {
       const box = document.querySelector('.love-status-box');
       if (box) {
-        const hidden = box.style.display === 'none';
-        box.style.display = hidden ? 'block' : 'none';
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
       }
     }
   });
-}
+})();
