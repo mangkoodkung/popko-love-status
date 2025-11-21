@@ -38,3 +38,58 @@
   // รอจน DOM โหลดครบ
   document.addEventListener('DOMContentLoaded', loadUI);
 })();
+
+(function () {
+  // ชื่อ extension (ต้องไม่ซ้ำกับของคนอื่น)
+  const EXT_ID = 'popko-love-status';
+
+  // รอจน ST โหลดเสร็จ
+  function waitForReady() {
+    if (!window.addExtensionMenu) {
+      return setTimeout(waitForReady, 300);
+    }
+    init();
+  }
+
+  function init() {
+    console.log('[Popko Love Status] Extension Loaded');
+
+    // เพิ่มเมนูในหน้า Extensions Panel
+    window.addExtensionMenu({
+      id: EXT_ID,
+      title: 'Popko Love Status',
+      type: 'custom',
+      html: createMenuHTML(),
+    });
+
+    bindMenuEvents();
+  }
+
+  function createMenuHTML() {
+    return `
+            <div style="padding: 10px;">
+                <h3 style="margin: 0 0 10px 0;">Popko Love Status</h3>
+
+                <button id="love-reset-btn" class="menu-btn">รีเซ็ตค่า Love</button><br><br>
+
+                <button id="love-toggle-btn" class="menu-btn">แสดง / ซ่อน overlay</button>
+            </div>
+        `;
+  }
+
+  function bindMenuEvents() {
+    document.addEventListener('click', e => {
+      if (e.target.id === 'love-reset-btn') {
+        if (window.resetLoveAffinity) window.resetLoveAffinity();
+      }
+      if (e.target.id === 'love-toggle-btn') {
+        const box = document.querySelector('.love-status-box');
+        if (box) {
+          box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+      }
+    });
+  }
+
+  waitForReady();
+})();
