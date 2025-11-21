@@ -1,6 +1,5 @@
 (function () {
-  // *** ปรับค่า MAX_SCORE เป็น 200 (เหมือนเดิม) ***
-  const MAX_SCORE = 200; // --- 1. CSS Style (ปรับปรุงพื้นหลังและแก้ไขตำแหน่ง Text) ---
+  const MAX_SCORE = 200; // --- 1. CSS Style (โทนม่วงอ่อน ฟรุ้งฟริ้ง) ---
 
   const CSS_STYLE = `
         #popko-root {
@@ -14,13 +13,13 @@
             width: 40px; 
             height: 40px;
             border-radius: 50%;
-            background: #FFB3D9; 
+            background: #E0BBE4; /* ม่วงอ่อนน่ารัก */
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
             cursor: grab;
-            border: 2px solid #FF80A6; 
+            border: 2px solid #957DAD; /* ม่วงเข้มขึ้นสำหรับขอบ */
             box-shadow: 0 3px 6px rgba(0,0,0,0.3);
         }
         #love-overlay {
@@ -28,8 +27,8 @@
             right: 0;
             top: 50px;
             width: 220px; 
-            background: rgba(255, 255, 255, 0.95); /* เพิ่มความทึบแสงเล็กน้อย */
-            border: 3px solid #FF80A6; 
+            background: rgba(240, 220, 245, 0.95); /* ม่วงอ่อนมากกึ่งโปร่งใส */
+            border: 3px solid #C3A7D6; /* ม่วงกลางสำหรับขอบ */
             border-radius: 15px; 
             padding: 12px;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
@@ -37,8 +36,8 @@
         .love-bar-container {
             position: relative;
             height: 25px; 
-            background: #FDEEF4; 
-            border: 1px solid #FFC0CB;
+            background: #F8F2FB; /* พื้นหลังหลอดสีขาวม่วงอ่อน */
+            border: 1px solid #D6B6E0; /* ขอบหลอดม่วงอ่อน */
             border-radius: 12px; 
             overflow: hidden;
             margin: 8px 0; 
@@ -46,47 +45,47 @@
         }
         #love-progress {
             height: 100%;
-            background: linear-gradient(90deg, #FF99CC, #FF5C99); 
+            background: linear-gradient(90deg, #FFC0CB, #EE82EE); /* ชมพูอ่อนไปม่วงชมพู */
             transition: width 0.8s ease-out; 
         }
         #love-score-text {
             position: absolute;
-            top: 0; /* แก้ไข: ทำให้ Text อยู่ด้านบนของ Container */
+            top: 0; 
             left: 0; 
             width: 100%;
             text-align: center;
-            line-height: 25px; /* แก้ไข: ให้เท่ากับความสูงของหลอด */
-            color: white; 
+            line-height: 25px; 
+            color: white; /* ตัวเลขเปอร์เซ็นต์สีขาว */
             font-weight: bold;
-            text-shadow: 1px 1px 2px #FF5C99; 
+            text-shadow: 1px 1px 2px #A64D79; /* เงาสีม่วงเข้ม */
             font-size: 14px;
-            z-index: 1; /* ทำให้ Text อยู่เหนือ Progress Bar */
+            z-index: 1; 
         }
         #love-level-text {
             text-align: center;
             font-size: 18px;
             font-weight: 800; 
-            color: #FF69B4; 
-            text-shadow: 0 0 5px rgba(255, 105, 180, 0.5); 
+            color: #8A2BE2; /* สีม่วงเข้ม */
+            text-shadow: 0 0 5px rgba(138, 43, 226, 0.5); /* เงาฟรุ้งฟริ้ง */
             margin-bottom: 5px;
         }
         .status-text {
-            color: #666; /* สีเทาเข้มขึ้น */
+            color: #7B68EE; /* สีม่วงอมฟ้าสำหรับสถานะ */
             font-size: 11px;
             margin-top: 5px;
             text-align: center;
         }
         #btn-force-scan {
-            background: #FFD9EB !important; 
-            color: #FF5C99 !important; 
-            border: 1px solid #FF80A6 !important;
+            background: #F0E6FA !important; /* พื้นหลังปุ่มม่วงอ่อนมาก */
+            color: #9370DB !important; /* ตัวอักษรสีม่วงกลาง */
+            border: 1px solid #C3A7D6 !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             font-weight: bold;
         }
         .hidden {
             display: none !important;
         }
-    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือน V4.2) --- // ... getCurrentCharKey(), getScore(), setScore() เหมือนเดิม
+    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือนเดิม) ---
 
   function getCurrentCharKey() {
     if (typeof window.this_chid !== 'undefined' && window.characters && window.characters[window.this_chid]) {
@@ -106,11 +105,11 @@
     const key = getCurrentCharKey();
     localStorage.setItem(key, val);
     return val;
-  } // --- 3. HTML Templates (เหมือน V4.2) ---
+  } // --- 3. HTML Templates (ปรับปรุงเพื่อให้ UI สวยขึ้น) ---
 
   const HTML_TEMPLATE = `
         <div id="popko-root">
-            <div id="love-toggle-btn">💖</div>
+            <div id="love-toggle-btn">💜</div>
             <div id="love-overlay" class="hidden">
                 <div class="love-status-box">
                     <div id="love-level-text">...</div>
@@ -119,7 +118,7 @@
                         <div id="love-score-text">0%</div>
                     </div>
                     <div class="status-text">
-                        Auto-Scan: <span id="auto-status" style="color:#FF5C99;">Active</span>
+                        Auto-Scan: <span id="auto-status" style="color:#9370DB;">Active</span>
                     </div>
                     <div style="margin-top:8px;">
                         <button id="btn-force-scan" class="menu_button" style="width:100%; padding: 6px;">
@@ -133,13 +132,13 @@
   const SETTINGS_PANEL_HTML = `
         <div id="popko-settings-panel" class="extension_block">
             <div class="extension_name">
-                Popko Love Status (V4.3)
+                Popko Love Status (V4.4)
                 <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
             </div>
             <div class="extension_content" style="display:none; padding: 10px;">
                 <button id="menu-toggle-widget" class="menu_button" style="width:100%; margin-bottom:5px;">👁️ ซ่อน/แสดง ปุ่ม</button>
                 <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc; margin-bottom:10px;">🗑️ รีเซ็ตค่า (ตัวนี้)</button>
-                <button id="menu-show-history" class="menu_button" style="width:100%; background:#cceeff; margin-bottom:10px;">📊 ดูประวัติคะแนน</button>
+                <button id="menu-show-history" class="menu_button" style="width:100%; background:#e0bbec; margin-bottom:10px;">📊 ดูประวัติคะแนน</button>
                 <div id="score-history-list" style="display:none;"></div>
             </div>
         </div>
@@ -155,7 +154,7 @@
 
     if (bar && text && label) {
       bar.style.width = `${percent}%`;
-      text.innerText = `${Math.round(percent)}%`; // ใช้ innerText เพื่อแสดงข้อความธรรมดา // ปรับเกณฑ์ระดับความรักและไอคอน
+      text.innerText = `${Math.round(percent)}%`; // ปรับเกณฑ์ระดับความรักและไอคอน
 
       if (percent >= 90) label.innerHTML = `💍 **คู่ชีวิต** 💖`;
       else if (percent >= 70) label.innerHTML = `💖 **คลั่งรัก** 🌹`;
@@ -164,7 +163,7 @@
       else if (percent >= 10) label.innerHTML = `🤝 **เพื่อน** 😉`;
       else label.innerHTML = `😐 **คนรู้จัก** 💬`;
     }
-  } // --- 5. Scanning Logic (เหมือน V4.2) --- // ... tryParseText() และ performScan() เหมือนเดิม
+  } // --- 5. Scanning Logic (เหมือนเดิม) ---
 
   function tryParseText(text) {
     if (!text) return false;
@@ -210,7 +209,7 @@
       alert(found ? '✅ เจอและอัปเดตแล้ว!' : '❌ ไม่พบ Tag [LOVE]');
     }
     return found;
-  } // --- 6. Init และ History Logic (เหมือน V4.2) ---
+  } // --- 6. Init และ History Logic (ปรับสีเล็กน้อย) ---
 
   function getSavedCharacterScores() {
     const scores = [];
@@ -239,15 +238,15 @@
     }
     let html = '';
     if (scores.length === 0) {
-      html = '<p style="font-size:12px; color:#aaa; text-align:center;">ยังไม่มีคะแนนตัวละครที่บันทึกไว้</p>';
+      html = '<p style="font-size:12px; color:#A78BCB; text-align:center;">ยังไม่มีคะแนนตัวละครที่บันทึกไว้</p>';
     } else {
       html += '<ul style="list-style:none; padding:0; margin-top:5px;">';
       scores.forEach(item => {
         html += `
-            <li style="border-bottom: 1px solid #ffc0cb; padding: 5px 0;">
-                <div style="font-weight: bold; font-size: 13px; color: #FF69B4;">${item.name}</div>
-                <div style="font-size: 11px; color: #333;">
-                    💖 ${item.percent}% (${item.score}/${MAX_SCORE})
+            <li style="border-bottom: 1px solid #D6B6E0; padding: 5px 0;">
+                <div style="font-weight: bold; font-size: 13px; color: #8A2BE2;">${item.name}</div>
+                <div style="font-size: 11px; color: #5B3B81;">
+                    💜 ${item.percent}% (${item.score}/${MAX_SCORE})
                 </div>
             </li>
         `;
@@ -268,7 +267,7 @@
     $('#love-toggle-btn').on('click', () => $('#love-overlay').toggleClass('hidden'));
     $('#btn-force-scan').on('click', () => {
       performScan(true);
-      $('#auto-status').css('color', '#FF5C99');
+      $('#auto-status').css('color', '#9370DB');
     });
     $('#menu-show-history').on('click', displayScoreHistory);
 
@@ -348,7 +347,7 @@
     const btn = document.getElementById('love-toggle-btn');
     if (btn) makeDraggable(btn);
     updateDisplay();
-  } // --- 7. Event Listeners (Mutation Observer) --- // ... startListening() เหมือน V4.2
+  } // --- 7. Event Listeners (Mutation Observer) ---
 
   function startListening() {
     const chatContainer = document.getElementById('chat');
@@ -362,7 +361,7 @@
       $('#auto-status').text('Scanning...').css('color', 'orange');
       scanTimeout = setTimeout(() => {
         performScan(false);
-        $('#auto-status').text('Active').css('color', '#FF5C99');
+        $('#auto-status').text('Active').css('color', '#9370DB');
       }, 300);
     });
     observer.observe(chatContainer, {
@@ -382,7 +381,7 @@
     setTimeout(() => {
       init();
       startListening();
-      console.log('[Popko] V4.3 Loaded (UI Refined, Text Position Fixed)');
+      console.log('[Popko] V4.4 Loaded (Soft Purple UI)');
     }, 500);
   });
 })();
