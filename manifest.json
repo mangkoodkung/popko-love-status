@@ -3,9 +3,9 @@
   "loading_order": 50,
   "requires": [],
   "optional": [],
-  "js": ["extension-script.js"],
-  "css": ["style.css"],
+  "js": "extension-script.js",
+  "css": "style.css",
   "author": "Popko",
   "version": "1.0.0",
-  "description": "Love Status Overlay for SillyTavern."
+  "description": "Love Status Overlay for SillyTavern"
 }

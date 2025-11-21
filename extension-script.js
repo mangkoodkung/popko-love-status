@@ -1,7 +1,9 @@
 (function () {
-  const EXT_ID = 'popko-love-status';
+  // ตั้งชื่อ ID ให้ไม่ซ้ำใคร
+  const PLUGIN_ID = 'popko-love-status';
 
-  // ส่วนที่ 1: HTML Template (แปลงจาก index.html ของคุณมาเป็น String)
+  // 1. HTML ของ Overlay (ปุ่มหัวใจลอย + แถบเลือด)
+  // เราเขียนเป็น String ใส่ตัวแปรไว้เลย ไม่ต้องแยกไฟล์
   const OVERLAY_HTML = `
         <div id="love-toggle-btn" title="Toggle Love Status">💗</div>
         <div id="love-overlay" class="hidden">
@@ -12,23 +14,23 @@
                 </div>
                 <div id="love-score-text">0</div>
                 <div class="test-buttons">
-                    <button id="btn-test-add" class="menu_button">+10</button>
-                    <button id="btn-test-sub" class="menu_button">-10</button>
+                    <button id="btn-love-add" class="menu_button">+10</button>
+                    <button id="btn-love-sub" class="menu_button">-10</button>
                 </div>
             </div>
         </div>
     `;
 
-  // State ตัวแปรความรัก
+  // ตัวแปรเก็บค่าความรัก
   let affinity = 0;
 
-  // ฟังก์ชันอัปเดตหลอดเลือด (จาก script.js เดิม)
-  function updateLove() {
+  // ฟังก์ชันอัปเดตหน้าจอ
+  function updateLoveUI() {
     const bar = document.getElementById('love-progress');
     const level = document.getElementById('love-level-text');
     const score = document.getElementById('love-score-text');
 
-    if (!bar) return; // ถ้ายังไม่สร้างหน้าจอ ก็ไม่ต้องทำอะไร
+    if (!bar) return;
 
     let percent = Math.min(Math.max((affinity / 2000) * 100, 0), 100);
     bar.style.width = percent + '%';
@@ -42,97 +44,94 @@
     else level.textContent = '😞 ลดลง';
   }
 
-  // ฟังก์ชันสร้าง UI ลงบนหน้าจอ SillyTavern (แก้ปัญหา index.html ไม่โหลด)
-  function injectOverlay() {
-    if (document.getElementById('popko-love-wrapper')) return; // ป้องกันสร้างซ้ำ
+  // ฟังก์ชันสร้างหน้าต่างลอย (Overlay)
+  function initOverlay() {
+    if ($('#love-toggle-btn').length > 0) return; // ถ้ามีแล้วไม่ต้องสร้างซ้ำ
 
-    const wrapper = document.createElement('div');
-    wrapper.id = 'popko-love-wrapper';
-    wrapper.innerHTML = OVERLAY_HTML;
-    document.body.appendChild(wrapper);
+    $('body').append(OVERLAY_HTML); // ยัด HTML ลง body
 
-    // ผูก Event ต่างๆ หลังจากสร้าง Element เสร็จแล้ว
-    bindEvents();
-    updateLove();
-  }
-
-  function bindEvents() {
-    const toggleBtn = document.getElementById('love-toggle-btn');
-    const overlay = document.getElementById('love-overlay');
-
-    // 1. ปุ่ม Toggle เปิด/ปิด
-    toggleBtn.addEventListener('click', () => {
-      overlay.classList.toggle('hidden');
+    // ผูก Event ปุ่มต่างๆ
+    $('#love-toggle-btn').on('click', function () {
+      $('#love-overlay').toggleClass('hidden');
     });
 
-    // 2. ปุ่ม Test เพิ่ม/ลด
-    document.getElementById('btn-test-add').addEventListener('click', () => {
+    $('#btn-love-add').on('click', function () {
       affinity += 10;
-      updateLove();
+      updateLoveUI();
     });
-    document.getElementById('btn-test-sub').addEventListener('click', () => {
+
+    $('#btn-love-sub').on('click', function () {
       affinity -= 10;
-      updateLove();
+      updateLoveUI();
     });
 
-    // 3. ระบบลากปุ่ม (Drag)
-    let offsetX = 0,
-      offsetY = 0,
-      isDragging = false;
+    updateLoveUI();
 
-    toggleBtn.addEventListener('mousedown', e => {
+    // ทำให้ปุ่มลากได้ (Drag logic)
+    const btn = document.getElementById('love-toggle-btn');
+    let isDragging = false,
+      offsetX,
+      offsetY;
+
+    btn.addEventListener('mousedown', e => {
       isDragging = true;
-      const rect = toggleBtn.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-      toggleBtn.style.cursor = 'grabbing';
+      offsetX = e.clientX - btn.getBoundingClientRect().left;
+      offsetY = e.clientY - btn.getBoundingClientRect().top;
+      btn.style.cursor = 'grabbing';
     });
 
     document.addEventListener('mousemove', e => {
       if (!isDragging) return;
-      e.preventDefault(); // กันเลือก Text
-      toggleBtn.style.left = e.clientX - offsetX + 'px';
-      toggleBtn.style.top = e.clientY - offsetY + 'px';
-      toggleBtn.style.right = 'auto';
-      toggleBtn.style.bottom = 'auto';
+      btn.style.left = e.clientX - offsetX + 'px';
+      btn.style.top = e.clientY - offsetY + 'px';
+      btn.style.right = 'auto'; // ล้างค่า right/bottom
+      btn.style.bottom = 'auto';
     });
 
     document.addEventListener('mouseup', () => {
       isDragging = false;
-      toggleBtn.style.cursor = 'grab';
+      btn.style.cursor = 'grab';
     });
   }
 
-  // --- ส่วนเชื่อมต่อกับ SillyTavern ---
-  const ext = {};
-  window['extension_' + EXT_ID] = ext; // ต้องประกาศตัวแปร global นี้ ST ถึงจะเห็น
+  // ฟังก์ชันสร้างเมนูในหน้า Extension (เลียนแบบ kencuo)
+  function createSettingsMenu() {
+    // เช็คว่ามีกล่อง Extension Settings ของ ST หรือยัง
+    const extensionsSettings = $('#extensions_settings');
+    if (extensionsSettings.length === 0) return;
 
-  ext.load = function () {
-    console.log('[Popko Love Status] Extension Loaded!');
+    // เช็คว่าเมนูของเราเคยสร้างไปหรือยัง
+    if ($('#popko-love-settings').length > 0) return;
 
-    // 1. สร้าง Overlay ทันทีที่โหลดเสร็จ
-    injectOverlay();
+    // HTML ของเมนู
+    const menuHTML = `
+            <div id="popko-love-settings" class="extension_block">
+                <div class="extension_name">
+                    Popko Love Status
+                    <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
+                </div>
+                <div class="extension_content" style="display:none; padding: 10px;">
+                    <p>ควบคุมสถานะความรัก</p>
+                    <button id="popko-reset-btn" class="menu_button">รีเซ็ตค่าเป็น 0</button>
+                </div>
+            </div>
+        `;
 
-    // 2. เพิ่มเมนูใน Extension Panel
-    if (typeof addExtensionMenu === 'function') {
-      addExtensionMenu({
-        id: EXT_ID,
-        title: 'Popko Love Status',
-        description: 'แสดงแถบสถานะความรักบนหน้าจอ',
-        html: `
-                    <div style="padding: 10px;">
-                        <h3>Popko Settings</h3>
-                        <button id="popko-reset-btn" class="menu_button">รีเซ็ตค่าเป็น 0</button>
-                    </div>
-                `,
-      });
+    // ยัดเมนูเข้าไปต่อท้าย
+    extensionsSettings.append(menuHTML);
 
-      // ผูกปุ่มรีเซ็ตในเมนู (ใช้ jQuery delegate เพราะเมนูอาจถูกสร้างใหม่)
-      $(document).on('click', '#popko-reset-btn', function () {
-        affinity = 0;
-        updateLove();
-        alert('รีเซ็ตค่าความรักแล้ว!');
-      });
-    }
-  };
+    // ผูกปุ่มรีเซ็ต
+    $(document).on('click', '#popko-reset-btn', function () {
+      affinity = 0;
+      updateLoveUI();
+      alert('รีเซ็ตค่าความรักแล้ว!');
+    });
+  }
+
+  // --- จุดเริ่มต้นการทำงาน (Entry Point) ---
+  $(document).ready(function () {
+    console.log('[Popko] Extension Loading...');
+    initOverlay(); // สร้างหน้าต่างลอย
+    createSettingsMenu(); // สร้างเมนู
+  });
 })();
