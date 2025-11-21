@@ -1,95 +1,52 @@
 (function () {
-  console.log('[Popko Love Status] Loaded!');
-
-  // โหลด UI iframe
-  function loadUI() {
-    const iframe = document.createElement('iframe');
-    iframe.src = 'index.html';
-    iframe.style = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 160px;
-            border: none;
-            z-index: 99999;
-        `;
-    document.body.appendChild(iframe);
-
-    // ฟังข้อความจาก LLM
-    window.addEventListener('st-message', ev => {
-      const msg = ev.detail.message;
-
-      const match = msg.match(/LOVE_CHANGE\s*([+-]?\d+)/i);
-      if (match) {
-        iframe.contentWindow.postMessage(
-          {
-            type: 'LOVE_CHANGE',
-            value: Number(match[1]),
-          },
-          '*',
-        );
-      }
-    });
-
-    console.log('[Popko Love Status] UI Loaded');
-  }
-
-  // รอจน DOM โหลดครบ
-  document.addEventListener('DOMContentLoaded', loadUI);
-})();
-
-(function () {
-  // ชื่อ extension (ต้องไม่ซ้ำกับของคนอื่น)
   const EXT_ID = 'popko-love-status';
 
-  // รอจน ST โหลดเสร็จ
-  function waitForReady() {
-    if (!window.addExtensionMenu) {
-      return setTimeout(waitForReady, 300);
-    }
-    init();
+  // สร้าง namespace ของ extension
+  if (!window['extension_' + EXT_ID]) {
+    window['extension_' + EXT_ID] = {};
   }
 
-  function init() {
-    console.log('[Popko Love Status] Extension Loaded');
+  const ext = window['extension_' + EXT_ID];
 
-    // เพิ่มเมนูในหน้า Extensions Panel
-    window.addExtensionMenu({
+  // =============================
+  // ส่วนที่ต้องมี! สำคัญมาก!
+  // =============================
+  ext.settings = {}; // ถ้าไม่ใส่ Panel จะไม่ขึ้น
+  // =============================
+
+  // ฟังก์ชัน load() ถูกเรียกโดย SillyTavern
+  ext.load = function () {
+    console.log('[Popko Love Status] Loaded!');
+
+    addExtensionMenu({
       id: EXT_ID,
       title: 'Popko Love Status',
-      type: 'custom',
-      html: createMenuHTML(),
+      description: 'Love Status Overlay',
+      html: settingsUI(),
     });
+  };
 
-    bindMenuEvents();
-  }
-
-  function createMenuHTML() {
+  // UI Panel HTML
+  function settingsUI() {
     return `
             <div style="padding: 10px;">
-                <h3 style="margin: 0 0 10px 0;">Popko Love Status</h3>
-
-                <button id="love-reset-btn" class="menu-btn">รีเซ็ตค่า Love</button><br><br>
-
-                <button id="love-toggle-btn" class="menu-btn">แสดง / ซ่อน overlay</button>
+                <h4>Popko Love Status</h4>
+                <button id="love-reset-btn">รีเซ็ต</button><br><br>
+                <button id="love-toggle-btn">ซ่อน/แสดง Overlay</button>
             </div>
         `;
   }
 
-  function bindMenuEvents() {
-    document.addEventListener('click', e => {
-      if (e.target.id === 'love-reset-btn') {
-        if (window.resetLoveAffinity) window.resetLoveAffinity();
+  // จัดการปุ่มใน Panel
+  document.addEventListener('click', e => {
+    if (e.target.id === 'love-reset-btn') {
+      if (window.resetLoveAffinity) window.resetLoveAffinity();
+    }
+    if (e.target.id === 'love-toggle-btn') {
+      const box = document.querySelector('.love-status-box');
+      if (box) {
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
       }
-      if (e.target.id === 'love-toggle-btn') {
-        const box = document.querySelector('.love-status-box');
-        if (box) {
-          box.style.display = box.style.display === 'none' ? 'block' : 'none';
-        }
-      }
-    });
-  }
-
-  waitForReady();
+    }
+  });
 })();
