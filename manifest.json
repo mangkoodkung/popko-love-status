@@ -6,6 +6,6 @@
   "js": "extension-script.js",
   "css": "style.css",
   "author": "Popko",
-  "version": "1.0.0",
-  "description": "Love Status Overlay for SillyTavern"
+  "version": "2.0.0",
+  "description": "Love Status Overlay & AI Scanner"
 }
