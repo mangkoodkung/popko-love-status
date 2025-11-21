@@ -1,27 +1,33 @@
 (function () {
   const PLUGIN_ID = 'popko-love-status';
 
-  // HTML ของ Overlay
+  // HTML Overlay
   const OVERLAY_HTML = `
         <div id="love-toggle-btn" title="Toggle Love Status">💗</div>
         <div id="love-overlay" class="hidden">
             <div class="love-status-box">
                 <div id="love-level-text">Loading…</div>
-                <div class="love-bar">
-                    <div id="love-progress"></div>
+                
+                <div class="love-bar" style="position: relative; background: #ffd1dc; height: 24px; border-radius: 12px; overflow: hidden; border: 2px solid #ff85b3;">
+                    <div id="love-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                    
+                    <div id="love-score-text" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; line-height: 20px; text-align: center; font-weight: bold; color: #d6336c; text-shadow: 0px 0px 2px white;">0%</div>
                 </div>
-                <div id="love-score-text">0</div>
-                <div class="test-buttons">
-                    <button id="btn-love-add" class="menu_button">+10</button>
-                    <button id="btn-love-sub" class="menu_button">-10</button>
+
+                <div class="test-buttons" style="margin-top: 10px;">
+                    <button id="btn-love-add" class="menu_button" style="font-size: 12px;">+10%</button>
+                    <button id="btn-love-sub" class="menu_button" style="font-size: 12px;">-10%</button>
+                    <button id="btn-love-reset" class="menu_button" style="font-size: 12px;">Reset</button>
                 </div>
             </div>
         </div>
     `;
 
-  let affinity = 0;
+  // ตั้งค่าคะแนนเต็มที่นี่ (ตั้ง 100 เพื่อให้ 1 แต้ม = 1%)
+  const MAX_SCORE = 100;
+  let affinity = 0; // คะแนนปัจจุบัน
 
-  // --- 1. ฟังก์ชันอัปเดตหน้าจอ ---
+  // --- 1. ฟังก์ชันอัปเดตหน้าจอ (UI) ---
   function updateLoveUI() {
     const bar = document.getElementById('love-progress');
     const level = document.getElementById('love-level-text');
@@ -29,81 +35,87 @@
 
     if (!bar) return;
 
-    // คำนวณ % (เต็ม 100 ที่ 1000 แต้ม)
-    let percent = Math.min(Math.max((affinity / 1000) * 100, 0), 100);
-    bar.style.width = percent + '%';
-    score.textContent = affinity;
+    // คำนวณ % โดยเทียบกับ MAX_SCORE
+    // สูตร: (คะแนนปัจจุบัน / คะแนนเต็ม) * 100
+    let percent = (affinity / MAX_SCORE) * 100;
 
-    // เปลี่ยนข้อความตามระดับ
-    if (affinity >= 1000) level.textContent = '💍 คู่ครอง (Soulmate)';
-    else if (affinity >= 800) level.textContent = '💖 คลั่งรัก (Devoted)';
-    else if (affinity >= 500) level.textContent = '🌹 คนรัก (Lover)';
-    else if (affinity >= 200) level.textContent = '💞 แอบชอบ (Crush)';
-    else if (affinity >= 50) level.textContent = '😊 เพื่อนสนิท (Friend)';
-    else if (affinity >= 0) level.textContent = '😐 คนรู้จัก (Neutral)';
-    else level.textContent = '😡 เกลียด (Hated)';
+    // บังคับไม่ให้เกิน 0-100% (Clamping)
+    percent = Math.min(Math.max(percent, 0), 100);
+
+    // อัปเดตความกว้างหลอด
+    bar.style.width = percent + '%';
+
+    // อัปเดตตัวหนังสือให้เป็น %
+    score.textContent = Math.round(percent) + '%'; // โชว์ทศนิยมให้ใช้ toFixed(1)
+
+    // เปลี่ยนข้อความตามระดับ %
+    if (percent >= 100) level.textContent = '💍 คู่ชีวิต (100%)';
+    else if (percent >= 80) level.textContent = '💖 คลั่งรัก (80%+)';
+    else if (percent >= 60) level.textContent = '🌹 คนรัก (60%+)';
+    else if (percent >= 40) level.textContent = '💞 กำลังจีบ (40%+)';
+    else if (percent >= 20) level.textContent = '😊 เพื่อน (20%+)';
+    else if (percent >= 0) level.textContent = '😐 คนรู้จัก (0%+)';
+    else level.textContent = '💔 เกลียดขี้หน้า';
   }
 
-  // --- 2. ระบบดักจับข้อความจาก AI (หัวใจหลัก) ---
+  // --- 2. ระบบดักฟัง AI ---
   function initAIListener() {
-    // ตรวจสอบว่า SillyTavern โหลดระบบ Event หรือยัง
     if (!window.eventSource) {
-      console.warn('[Popko Love] EventSource not ready, retrying...');
       setTimeout(initAIListener, 1000);
       return;
     }
-
-    // ดักฟังเมื่อมีข้อความใหม่เข้ามา (MESSAGE_RECEIVED)
     window.eventSource.on(window.event_types.MESSAGE_RECEIVED, index => {
-      // ดึงข้อความล่าสุด
       let msg = window.chat[index];
-
-      // ถ้าเป็นข้อความของผู้ใช้ หรือไม่มีข้อความ ให้ข้ามไป
       if (!msg || msg.is_user) return;
 
-      // 🔍 ค้นหา Pattern: [LOVE: +10] หรือ [LOVE: -5]
-      // Regex นี้จะหาคำว่า LOVE: ตามด้วยตัวเลข (มี + หรือ - ก็ได้)
+      // หา Tag [LOVE: +10]
       const match = msg.mes.match(/\[(?:LOVE|AFFINITY)\s*:\s*([+-]?\d+)\]/i);
-
       if (match) {
-        // match[1] คือตัวเลขที่จับได้ (เช่น "+10" หรือ "-5")
         const points = parseInt(match[1]);
-
         if (!isNaN(points)) {
-          console.log(`[Popko Love] AI ordered change: ${points}`);
+          console.log(`[Popko] AI Change: ${points}%`);
+
+          // บวกคะแนนเพิ่มเข้าไป
           affinity += points;
+
+          // ล็อกไม่ให้เกิน 100 หรือต่ำกว่า 0
+          if (affinity > MAX_SCORE) affinity = MAX_SCORE;
+          if (affinity < 0) affinity = 0;
+
           updateLoveUI();
 
-          // (Option) ถ้าอยากให้แจ้งเตือนเด้งมุมจอ
+          // แจ้งเตือน
           if (typeof toastr !== 'undefined') {
-            if (points > 0) toastr.success(`ความสัมพันธ์เพิ่มขึ้น ${points}!`);
-            else toastr.warning(`ความสัมพันธ์ลดลง ${points}...`);
+            toastr.info(`ค่าความรักเปลี่ยน: ${points > 0 ? '+' : ''}${points}%`);
           }
         }
       }
     });
-
-    console.log('[Popko Love] AI Listener Activated! Ready to parse [LOVE: +/-N]');
   }
 
-  // --- 3. ฟังก์ชันสร้าง UI ---
+  // --- 3. ฟังก์ชันสร้าง Overlay ---
   function initOverlay() {
     if ($('#love-toggle-btn').length > 0) return;
     $('body').append(OVERLAY_HTML);
 
+    // ปุ่ม Toggle
     $('#love-toggle-btn').on('click', () => $('#love-overlay').toggleClass('hidden'));
 
-    // ปุ่มกดเล่น (Manual)
+    // ปุ่ม Test
     $('#btn-love-add').on('click', () => {
-      affinity += 10;
+      affinity = Math.min(affinity + 10, MAX_SCORE);
       updateLoveUI();
     });
     $('#btn-love-sub').on('click', () => {
-      affinity -= 10;
+      affinity = Math.max(affinity - 10, 0);
+      updateLoveUI();
+    });
+    $('#btn-love-reset').on('click', () => {
+      affinity = 0;
       updateLoveUI();
     });
 
-    // ระบบลากปุ่ม
+    // ระบบลากปุ่ม (Drag)
     const btn = document.getElementById('love-toggle-btn');
     let isDragging = false,
       offsetX,
@@ -117,6 +129,7 @@
     });
     document.addEventListener('mousemove', e => {
       if (!isDragging) return;
+      e.preventDefault();
       btn.style.left = e.clientX - offsetX + 'px';
       btn.style.top = e.clientY - offsetY + 'px';
       btn.style.right = 'auto';
@@ -130,9 +143,8 @@
     updateLoveUI();
   }
 
-  // --- 4. เริ่มทำงาน ---
   $(document).ready(function () {
     initOverlay();
-    initAIListener(); // เริ่มดักฟัง AI
+    initAIListener();
   });
 })();
