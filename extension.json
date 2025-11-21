@@ -1,0 +1,8 @@
+{
+  "name": "popko-love-status",
+  "title": "Popko Love Status",
+  "author": "Popko",
+  "version": "1.0.0",
+  "description": "Love Status overlay for SillyTavern",
+  "entry": "script.js"
+}
