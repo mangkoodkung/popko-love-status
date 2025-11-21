@@ -1,0 +1,118 @@
+/* --- style.css --- */
+
+/* กรอบหลักของ Overlay */
+#love-overlay {
+    position: fixed;
+    right: 20px;
+    bottom: 90px; /* ขยับขึ้นหนีมือถือ */
+    z-index: 99999; /* สูงสุดๆ */
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(8px);
+    padding: 15px;
+    border-radius: 16px;
+    width: 240px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    border: 2px solid #ffcce0;
+    font-family: sans-serif;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ซ่อน */
+.hidden {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ปุ่มหัวใจลอย */
+#love-toggle-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 30px;
+    width: 55px;
+    height: 55px;
+    background: linear-gradient(135deg, #ff7fbf, #ff4da6);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    cursor: grab;
+    z-index: 100000; /* สูงกว่า Overlay อีก */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    user-select: none;
+    touch-action: none; /* สำคัญ: ป้องกัน Browser เลื่อนจอตอนลากปุ่ม */
+    transition: transform 0.1s;
+    border: 2px solid white;
+}
+
+#love-toggle-btn:active {
+    cursor: grabbing;
+    transform: scale(0.90);
+}
+
+/* Responsive: โหมดมือถือ */
+@media (max-width: 768px) {
+    #love-toggle-btn {
+        /* ย้ายหนีแถบแชทข้างล่าง */
+        bottom: 150px; 
+        right: 10px;
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+    }
+
+    #love-overlay {
+        /* ย้าย overlay ตาม */
+        bottom: 210px;
+        right: 10px;
+        width: 200px; /* เล็กลงหน่อย */
+    }
+}
+
+/* กล่องสถานะ */
+.love-status-box { text-align: center; }
+
+#love-level-text {
+    font-size: 14px;
+    font-weight: 800;
+    color: #d44e8f;
+    margin-bottom: 8px;
+}
+
+/* หลอดเลือด */
+.love-bar-container {
+    width: 100%;
+    height: 24px;
+    background: #ffe6f0;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #ff85b3;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#love-progress {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ff9a9e 0%, #ff6a88 100%);
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* เด้งดึ๋ง */
+}
+
+#love-score-text {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: bold; color: #fff;
+    text-shadow: 1px 1px 2px #d6336c;
+}
+
+/* ปุ่มต่างๆ */
+.test-buttons { margin-top: 10px; display: flex; justify-content: center; gap: 5px; }
+.test-buttons button, #btn-force-scan {
+    background: #ffb3d4; border: none; padding: 5px 12px;
+    border-radius: 8px; color: #fff; font-weight: bold;
+    cursor: pointer; font-size: 12px;
+    transition: background 0.2s;
+}
+.test-buttons button:hover { background: #ff85b3; }
