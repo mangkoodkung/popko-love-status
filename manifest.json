@@ -7,5 +7,5 @@
   "css": ["style.css"],
   "author": "Popko",
   "version": "1.0.0",
-  "description": "Love Status Overlay for SillyTavern. Display affection bar on screen."
+  "description": "Love Status Overlay for SillyTavern."
 }
