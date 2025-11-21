@@ -1,5 +1,6 @@
 (function () {
-  const MAX_SCORE = 100; // --- 1. CSS Style (แก้ไขปัญหา UI เพี้ยนและหลอดไม่เต็ม) ---
+  // *** ปรับค่า MAX_SCORE เป็น 200 (ความรักจะขึ้นยากขึ้น 2 เท่า) ***
+  const MAX_SCORE = 200; // --- 1. CSS Style (ฟรุ้งฟริ้ง แบ๊วกรุบ) ---
 
   const CSS_STYLE = `
         #popko-root {
@@ -10,41 +11,43 @@
             touch-action: none;
         }
         #love-toggle-btn {
-            width: 35px;
-            height: 35px;
+            width: 40px; /* เพิ่มขนาดปุ่ม */
+            height: 40px;
             border-radius: 50%;
-            background: #ff7799;
+            background: #FFB3D9; /* ชมพูอ่อน */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 20px;
             cursor: grab;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            border: 2px solid #FF80A6; /* ขอบเข้มขึ้น */
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
         }
         #love-overlay {
             position: absolute;
             right: 0;
-            top: 40px;
-            width: 200px; 
-            background: rgba(30, 30, 30, 0.95);
-            border: 1px solid #ff7799;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            top: 50px;
+            width: 220px; 
+            background: rgba(255, 255, 255, 0.9); /* พื้นหลังขาวกึ่งโปร่งใส */
+            border: 3px solid #FF80A6; /* ขอบชมพูเข้ม */
+            border-radius: 15px; /* โค้งมนมากขึ้น */
+            padding: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
         }
         .love-bar-container {
             position: relative;
-            height: 20px;
-            background: #333;
-            border-radius: 10px; /* ทำให้โค้งมากขึ้น */
+            height: 25px; /* เพิ่มความหนา */
+            background: #FDEEF4; /* พื้นหลังหลอดสีชมพูอ่อนมาก */
+            border: 1px solid #FFC0CB;
+            border-radius: 12px; 
             overflow: hidden;
-            margin-top: 5px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); /* เพิ่มมิติ */
+            margin: 8px 0; /* เพิ่มระยะห่าง */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); 
         }
         #love-progress {
             height: 100%;
-            background: linear-gradient(90deg, #ff99aa, #ff4466);
-            transition: width 0.5s ease-out; 
+            background: linear-gradient(90deg, #FF99CC, #FF5C99); /* ไล่สีชมพูสดใส */
+            transition: width 0.8s ease-out; /* ทำให้แถบเลื่อนดู Smooth มากขึ้น */
         }
         #love-score-text {
             position: absolute;
@@ -52,22 +55,37 @@
             left: 0;
             width: 100%;
             text-align: center;
-            line-height: 20px;
-            color: white;
+            line-height: 25px;
+            color: white; /* ตัวเลขเปอร์เซ็นต์สีขาว */
             font-weight: bold;
-            text-shadow: 1px 1px 2px #000;
+            text-shadow: 1px 1px 2px #FF5C99; /* เพิ่มเงาสีชมพู */
+            font-size: 14px;
         }
         #love-level-text {
             text-align: center;
-            font-size: 16px;
-            font-weight: bold;
-            color: #ffcccc;
+            font-size: 18px;
+            font-weight: 800; /* เน้นความหนา */
+            color: #FF69B4; /* สีชมพู Hot Pink */
+            text-shadow: 0 0 5px rgba(255, 105, 180, 0.5); /* เพิ่มเงาฟรุ้งฟริ้ง */
             margin-bottom: 5px;
+        }
+        .status-text {
+            color: #888; /* สีเทาอ่อนสำหรับสถานะ */
+            font-size: 11px;
+            margin-top: 5px;
+            text-align: center;
+        }
+        #btn-force-scan {
+            background: #FFD9EB !important; /* พื้นหลังปุ่มชมพูอ่อน */
+            color: #FF5C99 !important; /* ตัวอักษรสีชมพูเข้ม */
+            border: 1px solid #FF80A6 !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-weight: bold;
         }
         .hidden {
             display: none !important;
         }
-    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือนเดิม) ---
+    `; // --- 2. ระบบจัดการชื่อตัวละครและเซฟ (เหมือน V4.1) --- // ... getCurrentCharKey(), getScore(), setScore() เหมือนเดิม
 
   function getCurrentCharKey() {
     if (typeof window.this_chid !== 'undefined' && window.characters && window.characters[window.this_chid]) {
@@ -87,11 +105,11 @@
     const key = getCurrentCharKey();
     localStorage.setItem(key, val);
     return val;
-  } // --- 3. HTML Templates (ปรับให้กระชับขึ้น) ---
+  } // --- 3. HTML Templates (ปรับปรุงเพื่อให้ UI สวยขึ้น) ---
 
   const HTML_TEMPLATE = `
         <div id="popko-root">
-            <div id="love-toggle-btn">💗</div>
+            <div id="love-toggle-btn">💖</div>
             <div id="love-overlay" class="hidden">
                 <div class="love-status-box">
                     <div id="love-level-text">...</div>
@@ -99,31 +117,32 @@
                         <div id="love-progress"></div>
                         <div id="love-score-text">0%</div>
                     </div>
-                    <div style="margin-top:5px; font-size:10px; color:#888;">
-                        Auto-Scan: <span id="auto-status" style="color:green;">Active</span>
+                    <div class="status-text">
+                        Auto-Scan: <span id="auto-status" style="color:#FF5C99;">Active</span>
                     </div>
-                    <div style="margin-top:5px;">
-                        <button id="btn-force-scan" class="menu_button" style="width:100%; padding: 5px;">
+                    <div style="margin-top:8px;">
+                        <button id="btn-force-scan" class="menu_button" style="width:100%; padding: 6px;">
                             🔍 Manual Check
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    `;
-
+    `; // Settings Panel (ใช้ HTML เดิมของ V4.1)
   const SETTINGS_PANEL_HTML = `
         <div id="popko-settings-panel" class="extension_block">
             <div class="extension_name">
-                Popko Love Status (V4.0)
+                Popko Love Status (V4.2)
                 <span style="float:right; cursor:pointer;" onclick="$(this).parent().next().slideToggle()">▼</span>
             </div>
             <div class="extension_content" style="display:none; padding: 10px;">
                 <button id="menu-toggle-widget" class="menu_button" style="width:100%; margin-bottom:5px;">👁️ ซ่อน/แสดง ปุ่ม</button>
-                <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc;">🗑️ รีเซ็ตค่า (ตัวนี้)</button>
+                <button id="menu-reset" class="menu_button" style="width:100%; background:#ffcccc; margin-bottom:10px;">🗑️ รีเซ็ตค่า (ตัวนี้)</button>
+                <button id="menu-show-history" class="menu_button" style="width:100%; background:#cceeff; margin-bottom:10px;">📊 ดูประวัติคะแนน</button>
+                <div id="score-history-list" style="display:none;"></div>
             </div>
         </div>
-    `; // --- 4. Display Logic (เหมือนเดิม) ---
+    `; // --- 4. Display Logic (ปรับเกณฑ์ระดับความรักให้ขึ้นยากขึ้น) ---
 
   function updateDisplay() {
     const score = getScore();
@@ -135,51 +154,50 @@
 
     if (bar && text && label) {
       bar.style.width = `${percent}%`;
-      text.innerText = `${Math.round(percent)}%`; // อัปเดต Label ระดับความรัก
+      text.innerText = `${Math.round(percent)}%`; // ปรับเกณฑ์ระดับความรักใหม่ (ใช้ MAX_SCORE = 200) // ถ้าค่า MAX_SCORE เปลี่ยน เปอร์เซ็นต์ตรงนี้จะยังคงทำงานได้
 
-      if (percent >= 100) label.innerText = `💍 คู่ชีวิต`;
-      else if (percent >= 80) label.innerText = `💖 คลั่งรัก`;
-      else if (percent >= 60) label.innerText = `🌹 คนรัก`;
-      else if (percent >= 40) label.innerText = `💞 จีบ`;
-      else if (percent >= 20) label.innerText = `😊 เพื่อน`;
-      else label.innerText = `😐 คนรู้จัก`;
+      if (percent >= 90) label.innerHTML = `💍 **คู่ชีวิต** 💖`;
+      else if (percent >= 70) label.innerHTML = `💖 **คลั่งรัก** 🌹`;
+      else if (percent >= 50) label.innerHTML = `💞 **คนรัก** ✨`;
+      else if (percent >= 30) label.innerHTML = `😊 **จีบ** 💕`;
+      else if (percent >= 10) label.innerHTML = `🤝 **เพื่อน** 😉`;
+      else label.innerHTML = `😐 **คนรู้จัก** 💬`;
     }
-  } // --- 5. Scanning Logic (เหมือนเดิม) ---
+  } // --- 5. Scanning Logic (เหมือน V4.1) --- // ... tryParseText() และ performScan() เหมือนเดิม (รองรับค่าบวกและลบอยู่แล้ว)
 
   function tryParseText(text) {
-    if (!text) return false;
+    if (!text) return false; // Regex นี้รองรับทั้ง +10 และ -5 อยู่แล้ว
     const regex = /\[\s*(?:LOVE|AFFINITY)\s*[:=]\s*([+\-]?\s*\d+)\s*\]/i;
     const match = text.match(regex);
 
     if (match) {
       const numStr = match[1].replace(/\s/g, '');
-      const points = parseInt(numStr, 10);
+      const points = parseInt(numStr, 10); // ถ้าเป็น -5, points จะเป็น -5
 
       if (!isNaN(points)) {
         console.log(`[Popko] ✅ Auto-detected: ${points}. Updating score.`);
+
         let current = getScore();
         setScore(current + points);
         updateDisplay();
 
         if (typeof toastr !== 'undefined') {
-          toastr.success(`Love Updated: ${points > 0 ? '+' : ''}${points}%`);
+          // แสดงแจ้งเตือนชัดเจนว่าเพิ่มหรือลด
+          const icon = points > 0 ? '💖' : '💔';
+          toastr.success(`${icon} Love Updated: ${points > 0 ? '+' : ''}${points} Points`);
         }
         return true;
       }
     }
     return false;
-  } // ฟังก์ชันสแกนหาข้อความ (ใช้ DOM เป็นหลัก)
-
+  }
   function performScan(isManual = false) {
-    let found = false; // 1. อ่านจาก DOM (หน้าจอ)
-
+    let found = false;
     const domMsgs = document.querySelectorAll('.mes_text');
     if (domMsgs.length > 0) {
-      // อ่านข้อความล่าสุด
       const lastMsg = domMsgs[domMsgs.length - 1].innerText;
       found = tryParseText(lastMsg);
-    } // 2. ถ้าไม่เจอ ลองอ่านจาก Variable (เป็น Fallback)
-
+    }
     if (!found && window.chat && window.chat.length > 0) {
       for (let i = window.chat.length - 1; i >= 0; i--) {
         if (!window.chat[i].is_user) {
@@ -188,44 +206,71 @@
         }
       }
     }
-
     if (isManual) {
       alert(found ? '✅ เจอและอัปเดตแล้ว!' : '❌ ไม่พบ Tag [LOVE]');
     }
     return found;
-  } // --- 6. Init ---
+  } // --- 6. Init และ History Logic (เหมือน V4.1) ---
+
+  function getSavedCharacterScores() {
+    const scores = [];
+    const prefix = 'popko_love_';
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const charNameKey = key.substring(prefix.length);
+        const charName = charNameKey.replace(/_/g, ' ');
+        const scoreValue = parseInt(localStorage.getItem(key), 10);
+        const percent = Math.round((scoreValue / MAX_SCORE) * 100);
+        scores.push({ name: charName, score: scoreValue, percent: percent, key: key });
+      }
+    }
+    scores.sort((a, b) => b.percent - a.percent);
+    return scores;
+  }
+
+  function displayScoreHistory() {
+    const historyContainer = $('#score-history-list');
+    const scores = getSavedCharacterScores();
+    if (historyContainer.is(':visible')) {
+      historyContainer.slideUp();
+      $('#menu-show-history').text('📊 ดูประวัติคะแนน');
+      return;
+    }
+    let html = '';
+    if (scores.length === 0) {
+      html = '<p style="font-size:12px; color:#aaa; text-align:center;">ยังไม่มีคะแนนตัวละครที่บันทึกไว้</p>';
+    } else {
+      html += '<ul style="list-style:none; padding:0; margin-top:5px;">';
+      scores.forEach(item => {
+        html += `
+            <li style="border-bottom: 1px solid #ffc0cb; padding: 5px 0;">
+                <div style="font-weight: bold; font-size: 13px; color: #FF69B4;">${item.name}</div>
+                <div style="font-size: 11px; color: #333;">
+                    💖 ${item.percent}% (${item.score}/${MAX_SCORE})
+                </div>
+            </li>
+        `;
+      });
+      html += '</ul>';
+    }
+    historyContainer.html(html).slideDown();
+    $('#menu-show-history').text('❌ ปิดประวัติคะแนน');
+  }
 
   function init() {
     $('#popko-root').remove();
-    $('#popko-settings-panel').remove(); // เพิ่ม CSS เข้าไปใน <head> เพื่อแก้ไข UI
+    $('#popko-settings-panel').remove();
     $('head').append('<style id="popko-style">' + CSS_STYLE + '</style>');
-
     $('body').append(HTML_TEMPLATE);
-    if ($('#extensions_settings').length) $('#extensions_settings').append(SETTINGS_PANEL_HTML); // Events & Drag Logic (เหมือนเดิม)
+    if ($('#extensions_settings').length) $('#extensions_settings').append(SETTINGS_PANEL_HTML); // Events
 
     $('#love-toggle-btn').on('click', () => $('#love-overlay').toggleClass('hidden'));
     $('#btn-force-scan').on('click', () => {
       performScan(true);
-      // หลัง Manual Check ให้รอ 1 วินาทีแล้วเปลี่ยน Auto Status กลับ
-      $('#auto-status').text('Active').css('color', 'green');
+      $('#auto-status').css('color', '#FF5C99'); // ให้กลับมาเป็นสีชมพู
     });
-    $('#menu-toggle-widget').on('click', function () {
-      const btn = $('#love-toggle-btn');
-      if (btn.is(':visible')) {
-        btn.hide();
-        $('#love-overlay').addClass('hidden');
-        $(this).text('🔴 แสดงปุ่มหัวใจ');
-      } else {
-        btn.show();
-        $(this).text('👁️ ซ่อนปุ่มหัวใจ');
-      }
-    });
-    $('#menu-reset').on('click', () => {
-      if (confirm('รีเซ็ตค่าของตัวละครนี้?')) {
-        setScore(0);
-        updateDisplay();
-      }
-    }); // Drag Logic (Touch & Mouse) - เหมือนเดิม
+    $('#menu-show-history').on('click', displayScoreHistory); // ... (ส่วน Event อื่นๆ และ Drag Logic เหมือนเดิม)
     const makeDraggable = element => {
       let isDragging = false,
         startX,
@@ -259,7 +304,6 @@
         isDragging = false;
         element.style.cursor = 'grab';
       };
-
       element.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
       element.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), {
         passive: false,
@@ -285,42 +329,30 @@
     };
     const btn = document.getElementById('love-toggle-btn');
     if (btn) makeDraggable(btn);
-
     updateDisplay();
-  } // --- 7. Event Listeners (ใช้ Mutation Observer แทน EventSource) ---
+  } // --- 7. Event Listeners (Mutation Observer) --- // ... startListening() เหมือน V4.1
 
   function startListening() {
-    const chatContainer = document.getElementById('chat'); // ID หลักของกล่องแชทใน SillyTavern
-
+    const chatContainer = document.getElementById('chat');
     if (!chatContainer) {
-      console.warn('[Popko] Chat container not found. Retrying in 1s...');
       setTimeout(startListening, 1000);
       return;
     }
-
-    let scanTimeout = null; // สร้าง Mutation Observer
+    let scanTimeout = null;
     const observer = new MutationObserver((mutationsList, observer) => {
-      // Clear timeout เก่า เพื่อให้เรียก performScan แค่ครั้งเดียวต่อข้อความ
-      if (scanTimeout) clearTimeout(scanTimeout); // ตั้งสถานะเป็น Scanning
-
-      $('#auto-status').text('Scanning...').css('color', 'orange'); // หน่วงเวลาสั้นๆ (300ms) เพื่อให้แน่ใจว่าข้อความถูกเพิ่มลงใน DOM สมบูรณ์แล้ว
-
+      if (scanTimeout) clearTimeout(scanTimeout);
+      $('#auto-status').text('Scanning...').css('color', 'orange');
       scanTimeout = setTimeout(() => {
-        console.log('[Popko] Auto-Scan triggered by MutationObserver.');
-        performScan(false); // ตั้งสถานะกลับเป็น Active
-        $('#auto-status').text('Active').css('color', 'green');
+        performScan(false);
+        $('#auto-status').text('Active').css('color', '#FF5C99'); // สีชมพูแทนสีเขียว
       }, 300);
-    }); // เริ่มสังเกตการณ์การเปลี่ยนแปลงของ Child Nodes ใน chatContainer
-
-    observer.observe(chatContainer, {
-      childList: true, // สังเกตการเพิ่ม/ลบ Node ลูก
-      subtree: true, // สังเกตในทุกระดับ
     });
-    console.log('[Popko] MutationObserver is now watching the chat container.'); // 2. เมื่อเปลี่ยนตัวละคร (ใช้ EventSource เดิมสำหรับการโหลดตัวละคร)
-
+    observer.observe(chatContainer, {
+      childList: true,
+      subtree: true,
+    });
     if (window.eventSource) {
       window.eventSource.on(window.event_types.CHAT_CHANGED, () => {
-        console.log('[Popko] Character changed, reloading score...');
         setTimeout(() => {
           updateDisplay();
         }, 500);
@@ -332,7 +364,7 @@
     setTimeout(() => {
       init();
       startListening();
-      console.log('[Popko] V4.0 Loaded (UI Fixed, MutationObserver for Auto-Scan)');
+      console.log('[Popko] V4.2 Loaded (Cute UI, Harder Love Logic)');
     }, 500);
   });
 })();
